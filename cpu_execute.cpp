@@ -165,6 +165,37 @@ uint8_t CPU::execute_block_10(Instruction instr) {
 }
 
 uint8_t CPU::execute_block_11(Instruction instr) {
+
+    if (instr.range(2, 0) == 0b110) {
+        throw std::runtime_error("Not implemented: " + std::format("Opcode not implemented: 0x{:02X}", instr.opcode));
+    }
+
+    // JP nn
+    if (instr.opcode == 0xC3) {
+        uint8_t byte1 = memory.read(pc);        
+        pc++;
+
+        uint8_t byte2 = memory.read(pc);
+        pc++;
+
+        uint16_t loc = (byte2 << 8) | byte1;
+        pc = loc;
+
+        return 4;
+    }
+
+    // DI
+    if (instr.opcode == 0xF3) {
+        ime_off();
+        return 4;
+    }
+
+    // EI
+    if (instr.opcode == 0xFB) {
+        ime_on();
+        return 4;
+    }
+
     throw std::runtime_error("Not implemented: " + std::format("Opcode not implemented: 0x{:02X}", instr.opcode));
     return 0;
 }

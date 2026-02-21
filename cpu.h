@@ -35,6 +35,9 @@ class CPU {
         uint16_t get_pair(uint8_t pair);
         void set_pair(uint8_t pair, uint16_t bytes);
 
+        void ime_on();
+        void ime_off();
+
     private:
         Bus& memory;
         REG_PAIR(a, f, af);
@@ -43,6 +46,7 @@ class CPU {
         REG_PAIR(h, l, hl);
         uint16_t pc;
         uint16_t sp;
+        bool ime;
 
         uint8_t execute_block_00(Instruction instr);
         uint8_t execute_block_01(Instruction instr);

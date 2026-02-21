@@ -84,3 +84,12 @@ uint8_t CPU::getH() {
 uint8_t CPU::getC() {
     return (f & (1 << 4)) != 0;
 }
+
+void CPU::ime_on() {
+    ime = 1;
+}
+
+void CPU::ime_off() {
+    ime = 0;
+}
+
