@@ -5,7 +5,7 @@
 
 class GameBoy {
     public:
-        GameBoy() : memory(), cpu(memory) {}
+        GameBoy();
 
         Bus& getBus() { return memory; };
         CPU& getCPU() { return cpu; };
@@ -16,4 +16,5 @@ class GameBoy {
     private:
         Bus memory;
         CPU cpu;
+        bool running;
 };

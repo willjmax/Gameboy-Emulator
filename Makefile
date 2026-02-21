@@ -3,7 +3,7 @@ CXXFLAGS = -Wall -std=c++23 -g
 LDFLAGS = -lSDL3
 
 TARGET = gameboy
-OBJS = main.o gameboy.o cpu.o memory.o instruction.o
+OBJS = main.o gameboy.o cpu.o memory.o instruction.o cpu_execute.o
 
 $(TARGET): $(OBJS)
 	$(CXX) $(CXXFLAGS) -o $(TARGET) $(OBJS) $(LDFLAGS)
@@ -16,6 +16,9 @@ gameboy.o: gameboy.cpp gameboy.h cpu.h memory.h
 
 cpu.o: cpu.cpp cpu.h memory.h
 	$(CXX) $(CXXFLAGS) -c cpu.cpp
+
+cpu_execute.o: cpu_execute.cpp cpu.h
+	$(CXX) $(CXXFLAGS) -c cpu_execute.cpp
 
 memory.o: memory.cpp memory.h
 	$(CXX) $(CXXFLAGS) -c memory.cpp
