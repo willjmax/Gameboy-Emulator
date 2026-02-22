@@ -1,7 +1,9 @@
+#include <stdexcept>
 #include "cpu.h"
 
 void CPU::step() {
     uint8_t opcode = fetch();
+
     Instruction instr(opcode);
     execute(instr);
 }
@@ -13,7 +15,28 @@ uint8_t CPU::fetch() {
     return opcode;
 }
 
-uint8_t CPU::load_from_r8(uint8_t r8) {
+uint16_t CPU::fetch_two_bytes() {
+    uint8_t byte1 = memory.read(pc);        
+    pc++;
+
+    uint8_t byte2 = memory.read(pc);
+    pc++;
+
+    return (byte2 << 8) | byte1;
+}
+
+void CPU::push(uint8_t data) {
+    memory.write(sp, data);
+    sp--;
+}
+
+uint8_t CPU::pop() {
+    uint8_t data = memory.read(sp);
+    sp++;
+    return data;
+}
+
+uint8_t CPU::read_r8(uint8_t r8) {
 
     switch (r8) {
         case 0:
@@ -35,6 +58,46 @@ uint8_t CPU::load_from_r8(uint8_t r8) {
     }
 
     return 0;
+}
+
+void CPU::write_r8(uint8_t r8, uint8_t data) {
+    switch (r8) {
+        case 0:
+            b = data;
+        case 1:
+            c = data;
+        case 2:
+            d = data; 
+        case 3:
+            e = data;
+        case 4:
+            h = data; 
+        case 5:
+            l = data;
+        case 6:
+            memory.write(hl, data);
+        case 7:
+            a = data;
+    }
+}
+
+void CPU::write_r16(uint8_t r16, uint16_t data) {
+    switch (r16) {
+        case 0:
+            bc = data;
+            break;
+        case 1:
+            de = data;
+            break;
+        case 2:
+            hl = data;
+            break;
+        case 3:
+            sp = data;
+            break;
+        default:
+            throw std::runtime_error("write_r16: Invalid register given");
+    }
 }
 
 void CPU::setZ(uint8_t flag) {

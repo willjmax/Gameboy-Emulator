@@ -14,29 +14,7 @@
 class CPU {
     public:
         CPU(Bus& b) : memory(b), pc(0x100), sp(0xFFFE) {};
-
         void step();
-        uint8_t fetch();
-        uint8_t execute(Instruction instr);
-
-        uint8_t getZ();
-        uint8_t getN();
-        uint8_t getH();
-        uint8_t getC();
-
-        void setZ(uint8_t flag);
-        void setN(uint8_t flag);
-        void setH(uint8_t flag);
-        void setC(uint8_t flag);
-
-        uint8_t get_reg(uint8_t reg);
-        void set_reg(uint8_t reg, uint8_t byte);
-
-        uint16_t get_pair(uint8_t pair);
-        void set_pair(uint8_t pair, uint16_t bytes);
-
-        void ime_on();
-        void ime_off();
 
     private:
         Bus& memory;
@@ -48,12 +26,40 @@ class CPU {
         uint16_t sp;
         bool ime;
 
+        // fetch bytes
+        uint8_t fetch();
+        uint16_t fetch_two_bytes();
+
+        // stack ops
+        void push(uint8_t data);
+        uint8_t pop();
+
+        // toggle interrupts
+        void ime_on();
+        void ime_off();
+
+        // execute instruction
+        uint8_t execute(Instruction instr);
         uint8_t execute_block_00(Instruction instr);
         uint8_t execute_block_01(Instruction instr);
         uint8_t execute_block_10(Instruction instr);
         uint8_t execute_block_11(Instruction instr);
 
-        uint8_t load_from_r8(uint8_t r8);
+        // read/write from register
+        uint8_t read_r8(uint8_t r8);
+        void write_r8(uint8_t r8, uint8_t data);
+        uint16_t read_r16(uint8_t r16);
+        void write_r16(uint8_t r16, uint16_t data);
+
+        // get/set flags
+        uint8_t getZ();
+        uint8_t getN();
+        uint8_t getH();
+        uint8_t getC();
+        void setZ(uint8_t flag);
+        void setN(uint8_t flag);
+        void setH(uint8_t flag);
+        void setC(uint8_t flag);
 };
 
 #undef REG_PAIR
