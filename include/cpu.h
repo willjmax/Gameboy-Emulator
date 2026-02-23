@@ -25,6 +25,7 @@ class CPU {
         uint16_t pc;
         uint16_t sp;
         bool ime;
+        bool ei;
 
         // fetch bytes
         uint8_t fetch();
@@ -60,6 +61,9 @@ class CPU {
         void setN(uint8_t flag);
         void setH(uint8_t flag);
         void setC(uint8_t flag);
+
+        // helper class for testing
+        friend class CPUTester;
 };
 
 #undef REG_PAIR

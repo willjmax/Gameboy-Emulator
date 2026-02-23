@@ -1,8 +1,4 @@
-#include <format>
-#include <stdexcept>
 #include "cpu.h"
-
-#include <iostream>
 
 bool half_carry(uint16_t a, uint16_t b) {
     return (a & 0x0F) + (b & 0x0F) > 0x0F;
@@ -87,7 +83,7 @@ uint8_t CPU::execute_block_00(Instruction instr) {
 
             setZ(result == 0);
             setN(1);
-            setH(half_borrow(r8, 1));
+            setH(half_borrow(data, 1));
 
             return 1;
         }
@@ -107,6 +103,11 @@ uint8_t CPU::execute_block_00(Instruction instr) {
 }
 
 uint8_t CPU::execute_block_01(Instruction instr) {
+    throw std::runtime_error("Not implemented: " + std::format("Opcode not implemented: 0x{:02X}", instr.opcode));
+    return 0;
+}
+
+uint8_t CPU::execute_block_10(Instruction instr) {
     uint8_t op = instr.range(5, 3);
     uint8_t r8 = instr.range(2, 0);
 
@@ -118,12 +119,12 @@ uint8_t CPU::execute_block_01(Instruction instr) {
             uint16_t val = read_r8(r8);
             uint16_t result = a16 + val;
 
-            setZ((result & 0x0F) == 0);
+            setZ((result & 0xFF) == 0);
             setN(0);
             setH(half_carry(a16, val));
             setC(result > 0xFF);
 
-            a = result & 0x0F;
+            a = result & 0xFF;
             break;
         }
 
@@ -134,12 +135,12 @@ uint8_t CPU::execute_block_01(Instruction instr) {
             uint16_t carry = (uint16_t)getC();
             uint16_t result = a16 + val + carry;
 
-            setZ((result & 0x0F) == 0);
+            setZ((result & 0xFF) == 0);
             setN(0);
             setH(half_carry(a16, val + carry));
             setC(result > 0xFF);
 
-            a = result & 0x0F;
+            a = result & 0xFF;
             break;
         }
 
@@ -149,12 +150,12 @@ uint8_t CPU::execute_block_01(Instruction instr) {
             uint16_t val = read_r8(r8);
             uint16_t result = a16 - val;
 
-            setZ((result & 0x0F) == 0);
+            setZ((result & 0xFF) == 0);
             setN(1);
             setH(half_borrow(a16, val));
             setC(val > a16);
 
-            a = result & 0x0F;
+            a = result & 0xFF;
             break;
         }
 
@@ -165,12 +166,12 @@ uint8_t CPU::execute_block_01(Instruction instr) {
             uint16_t carry = (uint16_t)getC();
             uint16_t result = a16 - val - carry;
 
-            setZ((result & 0x0F) == 0);
+            setZ((result & 0xFF) == 0);
             setN(1);
             setH(half_borrow(a16, val + carry));
             setC((val + carry) > a16);
 
-            a = result & 0x0F;
+            a = result & 0xFF;
             break;
         }
 
@@ -216,15 +217,15 @@ uint8_t CPU::execute_block_01(Instruction instr) {
             break;
         }
 
-        // CP A,8
+        // CP A,r8
         case 0b111: {
             uint16_t a16 = (uint16_t)a;
             uint16_t val = read_r8(r8);
             uint16_t result = a16 - val;
 
-            setZ((result & 0x0F) == 0);
+            setZ((result & 0xFF) == 0);
             setN(1);
-            setH(half_carry(a16, val));
+            setH(half_borrow(a16, val));
             setC(val > a16);
 
             break;
@@ -238,10 +239,6 @@ uint8_t CPU::execute_block_01(Instruction instr) {
     return 1;
 }
 
-uint8_t CPU::execute_block_10(Instruction instr) {
-    throw std::runtime_error("Not implemented: " + std::format("Opcode not implemented: 0x{:02X}", instr.opcode));
-    return 0;
-}
 
 uint8_t CPU::execute_block_11(Instruction instr) {
 
@@ -259,14 +256,18 @@ uint8_t CPU::execute_block_11(Instruction instr) {
 
         // RET
         case 0xC9: {
-            pc = pop();
+            uint8_t lo = pop();
+            uint8_t hi = pop();
+            pc = (hi << 8) | lo;
             return 4;
         }
 
         // CALL [imm16]
         case 0xCD: {
-            push(pc);
-            pc = fetch_two_bytes();
+            uint16_t loc = fetch_two_bytes();
+            push((pc >> 8) & 0xFF);
+            push(pc & 0xFF);
+            pc = loc;
             return 6;
         }
 
@@ -274,8 +275,6 @@ uint8_t CPU::execute_block_11(Instruction instr) {
         case 0xE0: {
             uint8_t offset = fetch();
             uint16_t loc = 0xFF00 | (uint16_t)offset;
-            std::cout << std::format("0x{:02X}", offset) << std::endl;
-            std::cout << std::format("Writing to 0x{:02X}", loc) << std::endl;
             memory.write(loc, a);
             return 3;
         }

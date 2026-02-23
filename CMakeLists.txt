@@ -6,11 +6,18 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 include(FetchContent)
 FetchContent_Declare(
-  Catch2
-  GIT_REPOSITORY https://github.com/catchorg/Catch2.git
-  GIT_TAG        v3.4.0
+    Catch2
+    GIT_REPOSITORY https://github.com/catchorg/Catch2.git
+    GIT_TAG        v3.4.0
 )
 FetchContent_MakeAvailable(Catch2)
+
+FetchContent_Declare(
+    json 
+    URL https://github.com/nlohmann/json/releases/download/v3.12.0/json.tar.xz
+)
+FetchContent_MakeAvailable(json)
+
 
 file(GLOB_RECURSE ALL_CORE_SOURCES "src/*.cpp")
 
@@ -35,7 +42,14 @@ file(GLOB_RECURSE TEST_SOURCES "tests/*.cpp")
 
 if(TEST_SOURCES)
     add_executable(unit_tests ${TEST_SOURCES})
-    target_link_libraries(unit_tests PRIVATE EmulatorCore Catch2::Catch2WithMain)
+
+    target_link_libraries(unit_tests 
+        PRIVATE 
+            EmulatorCore 
+            Catch2::Catch2WithMain
+            nlohmann_json::nlohmann_json
+    )
+
     target_include_directories(unit_tests PRIVATE include)
 else()
     message(WARNING "No .cpp files found in tests/ folder. unit_tests target will not be built.")

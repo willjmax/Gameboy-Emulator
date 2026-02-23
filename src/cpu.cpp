@@ -26,8 +26,8 @@ uint16_t CPU::fetch_two_bytes() {
 }
 
 void CPU::push(uint8_t data) {
-    memory.write(sp, data);
     sp--;
+    memory.write(sp, data);
 }
 
 uint8_t CPU::pop() {
@@ -64,20 +64,28 @@ void CPU::write_r8(uint8_t r8, uint8_t data) {
     switch (r8) {
         case 0:
             b = data;
+            break;
         case 1:
             c = data;
+            break;
         case 2:
             d = data; 
+            break;
         case 3:
             e = data;
+            break;
         case 4:
             h = data; 
+            break;
         case 5:
             l = data;
+            break;
         case 6:
             memory.write(hl, data);
+            break;
         case 7:
             a = data;
+            break;
     }
 }
 
