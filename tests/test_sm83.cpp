@@ -31,7 +31,8 @@ TEST_CASE("SM83", "[cpu][sm83]") {
         std::ifstream f(std::string("tests/sm83/v1/") + filename);
         json tests = json::parse(f);
 
-        for (auto& test_case : tests | std::views::take(1)) {
+        // | std::views::take(1)
+        for (auto& test_case : tests | std::views::take(5)) {
             DYNAMIC_SECTION("Test: " << test_case["name"]) {
 
                 INFO(test_case["name"]);

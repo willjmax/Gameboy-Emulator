@@ -2,8 +2,8 @@
 #include "cpu.h"
 
 void CPU::step() {
+    if (halted) return;
     uint8_t opcode = fetch();
-
     Instruction instr(opcode);
     execute(instr);
 }
@@ -89,6 +89,21 @@ void CPU::write_r8(uint8_t r8, uint8_t data) {
     }
 }
 
+uint16_t CPU::read_r16(uint8_t r16) {
+    switch (r16) {
+        case 0:
+            return bc;
+        case 1:
+            return de;
+        case 2:
+            return hl;
+        case 3:
+            return sp;
+        default:
+            throw std::runtime_error("read_r16: Invalid register given");
+    }
+}
+
 void CPU::write_r16(uint8_t r16, uint16_t data) {
     switch (r16) {
         case 0:
@@ -105,6 +120,95 @@ void CPU::write_r16(uint8_t r16, uint16_t data) {
             break;
         default:
             throw std::runtime_error("write_r16: Invalid register given");
+    }
+}
+
+uint16_t CPU::read_r16_stack(uint8_t r16) {
+    switch (r16) {
+        case 0:
+            return bc;
+        case 1:
+            return de;
+        case 2:
+            return hl;
+        case 3:
+            return af;
+        default:
+            throw std::runtime_error("read_r16_stack: Invalid register given");
+    }
+}
+
+void CPU::write_r16_stack(uint8_t r16, uint16_t data) {
+    switch (r16) {
+        case 0:
+            bc = data;
+            break;
+        case 1:
+            de = data;
+            break;
+        case 2:
+            hl = data;
+            break;
+        case 3:
+            af = data & 0xFFF0;
+            break;
+        default:
+            throw std::runtime_error("write_r16_stack: Invalid register given");
+    }
+}
+
+uint16_t CPU::read_r16_mem(uint8_t r16) {
+    switch (r16) {
+        case 0:
+            return memory.read(bc);
+        case 1:
+            return memory.read(de);
+        case 2: {
+            uint16_t data = memory.read(hl);
+            hl++;
+            return data;
+        }
+        case 3: {
+            uint16_t data = memory.read(hl);
+            hl--;
+            return data;
+        }
+        default:
+            throw std::runtime_error("read_16_mem: Invalid register given");
+    }
+}
+
+void CPU::write_r16_mem(uint8_t r16, uint16_t data) {
+    switch (r16) {
+        case 0:
+            memory.write(bc, data);
+            break;
+        case 1:
+            memory.write(de, data);
+            break;
+        case 2:
+            memory.write(hl, data); 
+            hl++;
+            break;
+        case 3:
+            memory.write(hl, data);
+            hl--;
+            break;
+    }
+}
+
+bool CPU::cond(uint8_t cond) {
+    switch (cond) {
+        case 0:
+            return getZ() == 0;
+        case 1:
+            return getZ() != 0;
+        case 2:
+            return getC() == 0;
+        case 3:
+            return getC() != 0;
+        default:
+            throw std::runtime_error("cond: Invalid condition given.");
     }
 }
 

@@ -13,7 +13,7 @@
 
 class CPU {
     public:
-        CPU(Bus& b) : memory(b), pc(0x100), sp(0xFFFE) {};
+        CPU(Bus& b) : memory(b), pc(0x100), sp(0xFFFE), halted(false) {};
         void step();
 
     private:
@@ -24,6 +24,7 @@ class CPU {
         REG_PAIR(h, l, hl);
         uint16_t pc;
         uint16_t sp;
+        bool halted;
         bool ime;
         bool ei;
 
@@ -48,9 +49,13 @@ class CPU {
 
         // read/write from register
         uint8_t read_r8(uint8_t r8);
-        void write_r8(uint8_t r8, uint8_t data);
         uint16_t read_r16(uint8_t r16);
+        uint16_t read_r16_stack(uint8_t r16);
+        uint16_t read_r16_mem(uint8_t r16);
+        void write_r8(uint8_t r8, uint8_t data);
         void write_r16(uint8_t r16, uint16_t data);
+        void write_r16_stack(uint8_t r16, uint16_t data);
+        void write_r16_mem(uint8_t r16, uint16_t data);
 
         // get/set flags
         uint8_t getZ();
@@ -61,6 +66,7 @@ class CPU {
         void setN(uint8_t flag);
         void setH(uint8_t flag);
         void setC(uint8_t flag);
+        bool cond(uint8_t cond);
 
         // helper class for testing
         friend class CPUTester;
