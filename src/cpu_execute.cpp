@@ -34,18 +34,136 @@ uint8_t CPU::execute(Instruction instr) {
 
 uint8_t CPU::execute_block_00(Instruction instr) {
 
-    // NOP
-    if (instr.opcode == 0) {
-        return 1;
+    switch (instr.opcode) {
+
+        // NOP
+        case 0x00: {
+            return 1;
+        }
+
+        // RLCA
+        case 0x07: {
+            setC(a >> 7);
+            uint8_t shifted = (a << 1) | getC();
+
+            a = shifted;
+            setZ(shifted == 0);
+            setN(0);
+            setH(0);
+            
+            return 1;
+        }
+
+        // RRCA
+        case 0x0F: {
+            uint8_t new_carry = a & 0x1;
+            a = (a >> 1) | (new_carry << 7);
+            setZ(0);
+            setN(0);
+            setH(0);
+            setC(new_carry);
+            return 1;
+        }
+
+        // STOP
+        case 0x10: {
+            return 0;
+        }
+        
+        // JR imm8
+        case 0x18: {
+            int8_t offset = (int8_t)fetch();
+            pc += offset;
+            return 3;
+        }
+
+        // RLA
+        case 0x17: {
+            uint8_t new_carry = a >> 7;
+            uint8_t shifted = (a << 1) | getC();
+
+            a = shifted;
+            setZ(shifted == 0);
+            setN(0);
+            setH(0);
+            setC(new_carry);
+
+            return 1;
+        }
+
+        // RRA
+        case 0x1F: {
+            uint8_t new_carry = a & 0x01;
+            uint8_t shifted = (a >> 1) | (getC() << 7);
+
+            a = shifted;
+            setZ(shifted == 0);
+            setN(0);
+            setH(0);
+            setC(new_carry);
+
+            return 1;
+        }
+
+        // DAA
+        case 0x27: {
+            uint8_t adjustment = 0;
+
+            if (getN()) {
+                if (getH()) {
+                    adjustment += 0x6;
+                }
+
+                if (getC()) {
+                    adjustment += 0x60;
+                }
+
+                a -= adjustment;
+            } else {
+                if (getH() || ((a & 0xF) > 0x9)) {
+                    adjustment += 6;
+                }
+
+                if (getC() || (a > 0x99)) {
+                    adjustment += 0x60;
+                    setC(1);
+                }
+
+                a += adjustment;
+            }
+
+            setZ(a == 0);
+            setH(0);
+
+            return 1;
+        }
+
+        // CPL
+        case 0x2F: {
+            a = ~a;
+            setN(1);
+            setH(1);
+            return 1;
+        }
+
+        // SCF
+        case 0x37: {
+            setN(0);
+            setH(0);
+            setC(1);
+            return 1;
+        }
+
+        // CCF
+        case 0x3F: {
+            setN(0);
+            setH(0);
+            setC(getC() == 0);
+            return 1;
+        }
+
     }
     
-    // JR imm8
-    if (instr.opcode == 0x18) {
-        int8_t offset = (int8_t)fetch();
-        pc += offset;
-        return 3;
-    }
-
     // JR cond imm8
     if (instr.range(5, 5) == 1 && instr.range(2, 0) == 0) {
         uint8_t data = instr.range(4, 3);
@@ -259,7 +377,6 @@ uint8_t CPU::execute_block_10(Instruction instr) {
             setH(1);
             setC(0);
             a = result;
-
             break;
         }
 
@@ -326,12 +443,33 @@ uint8_t CPU::execute_block_11(Instruction instr) {
 
         // ADD a,imm8
         case 0xC6: {
-            throw std::runtime_error("Not implemented: " + std::format("Opcode not implemented: 0x{:02X}", instr.opcode));
+            uint16_t a16 = (uint16_t)a;
+            uint16_t val = fetch();
+            uint16_t result = a16 + val;
+
+            setZ((result & 0xFF) == 0);
+            setN(0);
+            setH(half_carry(a16, val));
+            setC(result > 0xFF);
+
+            a = result & 0xFF;
+            return 2;
         }
 
         // ADC a,imm8
         case 0xCE: {
-            throw std::runtime_error("Not implemented: " + std::format("Opcode not implemented: 0x{:02X}", instr.opcode));
+            uint16_t a16 = (uint16_t)a;
+            uint16_t val = fetch();
+            uint16_t carry = (uint16_t)getC();
+            uint16_t result = a16 + val + carry;
+
+            setZ((result & 0xFF) == 0);
+            setN(0);
+            setH(half_carry2(a16, val, carry));
+            setC(result > 0xFF);
+
+            a = result & 0xFF;
+            return 1;
        }
 
         // RET
@@ -344,7 +482,8 @@ uint8_t CPU::execute_block_11(Instruction instr) {
 
         // CB
         case 0xCB: {
-            throw std::runtime_error("Not implemented: " + std::format("Opcode not implemented: 0x{:02X}", instr.opcode));
+            uint8_t cb_instr = fetch();
+            return execute_cb(cb_instr);
         }
 
         // CALL imm16
@@ -358,17 +497,44 @@ uint8_t CPU::execute_block_11(Instruction instr) {
 
         // SUB a,imm8
         case 0xD6: {
-            throw std::runtime_error("Not implemented: " + std::format("Opcode not implemented: 0x{:02X}", instr.opcode));
+            uint16_t a16 = (uint16_t)a;
+            uint16_t val = fetch();
+            uint16_t result = a16 - val;
+
+            setZ((result & 0xFF) == 0);
+            setN(1);
+            setH(half_borrow(a16, val));
+            setC(val > a16);
+
+            a = result & 0xFF;
+
+            return 2;
         }
 
         // RETI
         case 0xD9: {
-            throw std::runtime_error("Not implemented: " + std::format("Opcode not implemented: 0x{:02X}", instr.opcode));
+            ime_on();
+            uint8_t lo = pop();
+            uint8_t hi = pop();
+            pc = (hi << 8) | lo;
+            return 4;
         }
 
         // SBC a,imm8
         case 0xDE: {
-            throw std::runtime_error("Not implemented: " + std::format("Opcode not implemented: 0x{:02X}", instr.opcode));
+            uint16_t a16 = (uint16_t)a;
+            uint16_t val = fetch();
+            uint16_t carry = (uint16_t)getC();
+            uint16_t result = a16 - val - carry;
+
+            setZ((result & 0xFF) == 0);
+            setN(1);
+            setH(half_borrow2(a16, val, carry));
+            setC((val + carry) > a16);
+
+            a = result & 0xFF;
+
+            return 2;
         }
 
         // LDH [imm8],A
@@ -390,22 +556,36 @@ uint8_t CPU::execute_block_11(Instruction instr) {
         case 0xE6: {
             uint8_t data = fetch();
             uint8_t result = a & data;
+
             setZ(result == 0);
             setN(0);
             setH(1);
             setC(0);
+
             a = result;
+
             return 2;
         }
 
         // ADD sp,imm8
         case 0xE8: {
-            throw std::runtime_error("Not implemented: " + std::format("Opcode not implemented: 0x{:02X}", instr.opcode));
+            int8_t offset = (int8_t)fetch();
+            uint16_t result = sp + offset;
+
+            setZ(0);
+            setN(0);
+            setH((sp & 0x000F) + (offset & 0x0F) > 0x0F);
+            setC((sp & 0x00FF) + (offset & 0x00FF) > 0xFF);
+
+            sp = result;
+
+            return 4;
         }
 
         // JP HL
         case 0xE9: {
-            throw std::runtime_error("Not implemented: " + std::format("Opcode not implemented: 0x{:02X}", instr.opcode));
+            pc = hl;
+            return 1;
         }
 
         // LD [imm16],A
@@ -417,7 +597,16 @@ uint8_t CPU::execute_block_11(Instruction instr) {
 
         // XOR a,imm8
         case 0xEE: {
-            throw std::runtime_error("Not implemented: " + std::format("Opcode not implemented: 0x{:02X}", instr.opcode));
+            uint8_t val = fetch();
+            uint8_t result = a ^ val;
+
+            setZ(result == 0);
+            setN(0);
+            setH(0);
+            setC(0);
+
+            a = result;
+            return 2;
         }
 
         // LDH A,[imm8]
@@ -450,17 +639,36 @@ uint8_t CPU::execute_block_11(Instruction instr) {
 
         // OR a,imm8
         case 0xF6: {
-            throw std::runtime_error("Not implemented: " + std::format("Opcode not implemented: 0x{:02X}", instr.opcode));
+            uint8_t val = fetch();
+            uint8_t result = a | val;
+
+            setZ(result == 0);
+            setN(0);
+            setH(0);
+            setC(0);
+
+            a = result;
+            return 2;
         }
 
         // LD HL, sp+imm8
         case 0xF8: {
-            throw std::runtime_error("Not implemented: " + std::format("Opcode not implemented: 0x{:02X}", instr.opcode));
+            int8_t offset = (int8_t)fetch();
+            uint16_t result = sp + offset;
+
+            setZ(0);
+            setN(0);
+            setH((sp & 0x000F) + (offset & 0x0F) > 0x0F);
+            setC((sp & 0x00FF) + (offset & 0x00FF) > 0xFF);
+
+            hl = result;
+            return 3;
         }
 
         // LD SP,HL
         case 0xF9: {
-            throw std::runtime_error("Not implemented: " + std::format("Opcode not implemented: 0x{:02X}", instr.opcode));
+            sp = hl;
+            return 2;
         }
 
         // EI
@@ -510,6 +718,35 @@ uint8_t CPU::execute_block_11(Instruction instr) {
     if (instr.range(5, 5) == 0) {
         switch (instr.range(2, 0)) {
 
+            // RET cond
+            case 0b000: {
+                uint8_t data = instr.range(4, 3);
+
+                if (cond(data)) {
+                    uint8_t lo = pop();
+                    uint8_t hi = pop();
+                    uint16_t loc = (hi << 8) | lo;
+                    pc = loc;
+
+                    return 5;
+                }
+
+                return 2;
+            }
+
+            // JP cond,imm16
+            case 0b010: {
+                uint8_t data = instr.range(4, 3);
+                uint16_t loc = fetch_two_bytes();
+
+                if (cond(data)) {
+                    pc = loc;
+                    return 4;
+                }
+
+                return 3;
+            }
+
             // CALL cond,imm16
             case 0b100: {
                 uint8_t data = instr.range(4, 3);
@@ -530,5 +767,173 @@ uint8_t CPU::execute_block_11(Instruction instr) {
         }
     }
 
+    // RST
+    if (instr.range(2, 0) == 7) {
+        uint16_t target = instr.range(5, 3) << 3;
+        uint8_t hi = pc >> 8;
+        uint8_t lo = pc & 0xFF;
+        push(hi);
+        push(lo);
+        pc = target;
+
+        return 4;
+    }
+
     throw std::runtime_error("Not implemented: " + std::format("Opcode not implemented: 0x{:02X}", instr.opcode));
+}
+
+uint8_t CPU::execute_cb(Instruction instr) {
+
+    if (instr.block == 0b00) {
+        uint8_t r8 = instr.range(2, 0);
+        uint8_t data = read_r8(r8);
+
+        switch (instr.range(5, 3)) {
+
+            // RLC r8
+            case 0: {
+                setC(data >> 7);
+                uint8_t shifted = (data << 1) | getC();
+
+                write_r8(r8, shifted);
+                setZ(shifted == 0);
+                setN(0);
+                setH(0);
+
+                return 2;
+            }
+
+            // RRC r8
+            case 1: {
+                setC(data & 0x01);
+                uint8_t shifted = (data >> 1) | (getC() << 7);
+
+                write_r8(r8, shifted);
+                setZ(shifted == 0);
+                setN(0);
+                setH(0);
+            
+                return 2;
+            }
+
+            // RL r8
+            case 2: {
+                uint8_t new_carry = data >> 7;
+                uint8_t shifted = (data << 1) | getC();
+
+                write_r8(r8, shifted);
+                setZ(shifted == 0);
+                setN(0);
+                setH(0);
+                setC(new_carry);
+
+                return 2;
+            }
+
+            // RR r8
+            case 3: {
+                uint8_t new_carry = data & 0x01;
+                uint8_t shifted = (data >> 1) | (getC() << 7);
+
+                write_r8(r8, shifted);
+                setZ(shifted == 0);
+                setN(0);
+                setH(0);
+                setC(new_carry);
+
+                return 2;
+            }
+
+            // SLA r8
+            case 4: {
+                uint8_t new_carry = data >> 7;
+                uint8_t shifted = data << 1;
+
+                write_r8(r8, shifted);
+                setZ(shifted == 0);
+                setN(0);
+                setH(0);
+                setC(new_carry);
+
+                return 2;
+            }
+
+            // SRA r8
+            case 5: {
+                uint8_t new_carry = data & 0x01;
+                uint8_t shifted = (data >> 1) | (data & 0x80);
+                
+                write_r8(r8, shifted);
+                setZ(shifted == 0);
+                setN(0);
+                setH(0);
+                setC(new_carry);
+
+                return 2;
+            }
+
+            // SWAP r8
+            case 6: {
+                uint8_t swapped = (data >> 4) | (data << 4);
+
+                write_r8(r8, swapped);
+                setZ(swapped == 0);
+                setN(0);
+                setH(0);
+                setC(0);
+
+                return 2;
+            }
+
+            // SRL r8
+            case 7: {
+                uint8_t new_carry = data & 0x01;
+                uint8_t shifted = data >> 1;
+
+                write_r8(r8, shifted);
+                setZ(shifted == 0);
+                setN(0);
+                setH(0);
+                setC(new_carry);
+
+                return 2;
+            }
+        }
+    }
+
+    uint8_t b3 = instr.range(5, 3);
+    uint8_t r8 = instr.range(2, 0);
+    uint8_t data = read_r8(r8);
+
+    switch (instr.block) {
+
+        // BIT b3,r8
+        case 0b01: {
+            uint8_t is_set = (data >> b3) & 0x01;
+
+            setZ(is_set == 0);
+            setN(0);
+            setH(1);
+
+            return 2;
+        }
+
+        //RES b3,r8
+        case 0b10: {
+            uint8_t off = data & ~(1 << b3);
+            write_r8(r8, off);
+
+            return 2;
+        }
+
+        // SET b3,r8
+        case 0b11: {
+            uint8_t on = data | (1 << b3);
+            write_r8(r8, on);
+
+            return 2;
+        }
+    }
+
+    throw std::runtime_error("Not implemented: " + std::format("Opcode not implemented: 0xCB 0x{:02X}", instr.opcode));
 }

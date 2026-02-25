@@ -46,6 +46,7 @@ class CPU {
         uint8_t execute_block_01(Instruction instr);
         uint8_t execute_block_10(Instruction instr);
         uint8_t execute_block_11(Instruction instr);
+        uint8_t execute_cb(Instruction instr);
 
         // read/write from register
         uint8_t read_r8(uint8_t r8);
