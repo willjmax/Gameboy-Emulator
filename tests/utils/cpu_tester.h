@@ -24,6 +24,7 @@ class CPUTester {
         uint8_t get_f() { return cpu.f; };
         uint8_t get_h() { return cpu.h; };
         uint8_t get_l() { return cpu.l; };
+        uint8_t get_ime() { return cpu.interrupts.ime; };
 
         uint8_t get_memory(uint16_t loc) {
             return cpu.memory.read(loc);

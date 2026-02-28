@@ -32,7 +32,7 @@ TEST_CASE("SM83", "[cpu][sm83]") {
         json tests = json::parse(f);
 
         // | std::views::take(1)
-        for (auto& test_case : tests | std::views::take(1)) {
+        for (auto& test_case : tests | std::views::take(15)) {
             DYNAMIC_SECTION("Test: " << test_case["name"]) {
 
                 INFO(test_case["name"]);
@@ -53,6 +53,7 @@ TEST_CASE("SM83", "[cpu][sm83]") {
                 CHECK(as_hex(tester.get_f()) == as_hex(final["f"]));
                 CHECK(as_hex(tester.get_h()) == as_hex(final["h"]));
                 CHECK(as_hex(tester.get_l()) == as_hex(final["l"]));
+                CHECK(as_hex(tester.get_ime()) == as_hex(final["ime"]));
 
                 for (const auto& entry : final["ram"]) {
                     uint16_t loc = entry[0];

@@ -2,10 +2,30 @@
 #include "cpu.h"
 
 void CPU::step() {
-    if (halted) return;
-    uint8_t opcode = fetch();
-    Instruction instr(opcode);
-    execute(instr);
+    uint8_t cycles;
+
+    if (interrupts.is_halted()) {
+        cycles = 1;
+    } else {
+        uint8_t opcode = fetch();
+        Instruction instr(opcode);
+        cycles = execute(instr);
+    }
+
+    bool tima_overflow = timer.tick(cycles);
+
+    if (tima_overflow) {
+        interrupts.request_timer_interrupt();
+    }
+
+    uint16_t interrupt_loc = interrupts.check_interrupts();
+    if (interrupt_loc > 0) {
+        push2(pc);
+        pc = interrupt_loc;
+        timer.tick(5);
+    }
+
+    interrupts.set_ime_from_delay();
 }
 
 uint8_t CPU::fetch() {
@@ -28,6 +48,17 @@ uint16_t CPU::fetch_two_bytes() {
 void CPU::push(uint8_t data) {
     sp--;
     memory.write(sp, data);
+}
+
+void CPU::push2(uint16_t data) {
+    uint8_t lo = data & 0x00FF;
+    uint8_t hi = data >> 8;
+
+    sp--;
+    memory.write(sp, hi);
+
+    sp--;
+    memory.write(sp, lo);
 }
 
 uint8_t CPU::pop() {
@@ -259,12 +290,3 @@ uint8_t CPU::getH() {
 uint8_t CPU::getC() {
     return (f & (1 << 4)) != 0;
 }
-
-void CPU::ime_on() {
-    ime = 1;
-}
-
-void CPU::ime_off() {
-    ime = 0;
-}
-

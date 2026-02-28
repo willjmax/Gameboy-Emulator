@@ -16,12 +16,20 @@ void CPUTester::setup_sm83(json initial) {
     cpu.h = initial.at("h").get<uint8_t>();
     cpu.l = initial.at("l").get<uint8_t>();
 
-    cpu.ime = initial.at("ime").get<int>() != 0;
-    cpu.ei = initial.value("ei", 0) != 0;
+    cpu.interrupts.ime = initial.at("ime").get<int>() != 0;
+
+    uint8_t ie = initial.value("ie", 0);
+    cpu.memory.write(0xFFFF, ie);
 
     for (const auto& ram : initial["ram"]) {
         uint16_t loc = ram[0];
         uint8_t data = ram[1];
-        cpu.memory.write(loc, data);
+
+        if (loc == 0xFF04) {
+            cpu.memory.update_div(data);
+            cpu.timer.internal_counter = (data << 8);
+        } else {
+            cpu.memory.write(loc, data);
+        }
     }
 }

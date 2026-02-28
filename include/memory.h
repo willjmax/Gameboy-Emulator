@@ -9,6 +9,8 @@ class Bus {
 
         void loadROM(std::ifstream& file, uintmax_t size);
 
+        void update_div(uint8_t div);
+
     private:
         uint8_t memory[0xFFFF];
 
@@ -23,5 +25,13 @@ class Bus {
         static constexpr uint16_t NOT_USABLE      = 0xFEA0;
         static constexpr uint16_t IO_START        = 0xFF00;
         static constexpr uint16_t HRAM_START      = 0xFF80;
-        static constexpr uint16_t IE_REG          = 0xFFFF; // Interrupt Enable Register
+
+        // divider register, must reset upon write
+        static constexpr uint16_t DIV  = 0xFF04;
+
+        // first 3 bits must always be 1 
+        static constexpr uint16_t IF_REG    = 0xFF0F;
+                                                            
+        // blargg
+        static constexpr uint16_t TERMINAL = 0xFF01;
 };

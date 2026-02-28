@@ -1,4 +1,5 @@
 #include "cpu.h"
+#include <iostream>
 
 bool half_carry(uint16_t a, uint16_t b) {
     return (a & 0x0F) + (b & 0x0F) > 0x0F;
@@ -43,13 +44,15 @@ uint8_t CPU::execute_block_00(Instruction instr) {
 
         // RLCA
         case 0x07: {
-            setC(a >> 7);
-            uint8_t shifted = (a << 1) | getC();
+            uint8_t new_carry = a >> 7;
+            uint8_t shifted = (a << 1) | new_carry;
 
             a = shifted;
-            setZ(shifted == 0);
+
+            setZ(0);
             setN(0);
             setH(0);
+            setC(new_carry);
             
             return 1;
         }
@@ -67,6 +70,8 @@ uint8_t CPU::execute_block_00(Instruction instr) {
 
         // STOP
         case 0x10: {
+            timer.enter_stop_mode();
+            timer.reset_div();
             return 0;
         }
         
@@ -83,7 +88,8 @@ uint8_t CPU::execute_block_00(Instruction instr) {
             uint8_t shifted = (a << 1) | getC();
 
             a = shifted;
-            setZ(shifted == 0);
+
+            setZ(0);
             setN(0);
             setH(0);
             setC(new_carry);
@@ -97,7 +103,7 @@ uint8_t CPU::execute_block_00(Instruction instr) {
             uint8_t shifted = (a >> 1) | (getC() << 7);
 
             a = shifted;
-            setZ(shifted == 0);
+            setZ(0);
             setN(0);
             setH(0);
             setC(new_carry);
@@ -286,7 +292,7 @@ uint8_t CPU::execute_block_01(Instruction instr) {
 
     // HALT
     if (instr.opcode == 0x76) {
-        halted = true;
+        interrupts.halt_cpu();
         return 0;
     }
 
@@ -513,7 +519,7 @@ uint8_t CPU::execute_block_11(Instruction instr) {
 
         // RETI
         case 0xD9: {
-            ime_on();
+            interrupts.set_ime();
             uint8_t lo = pop();
             uint8_t hi = pop();
             pc = (hi << 8) | lo;
@@ -612,7 +618,7 @@ uint8_t CPU::execute_block_11(Instruction instr) {
         // LDH A,[imm8]
         case 0xF0: {
             uint8_t lo = fetch();
-            uint16_t loc = 0xFF00 | lo;
+            uint16_t loc = 0xFF00 | (uint16_t)lo;
             a = memory.read(loc);
             return 3;
         }
@@ -633,7 +639,7 @@ uint8_t CPU::execute_block_11(Instruction instr) {
 
         // DI
         case 0xF3: {
-            ime_off();
+            interrupts.clear_ime();
             return 4;
         }
 
@@ -673,7 +679,7 @@ uint8_t CPU::execute_block_11(Instruction instr) {
 
         // EI
         case 0xFB: {
-            ime_on();
+            interrupts.set_ime_delay();
             return 4;
         }
 
