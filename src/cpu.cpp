@@ -2,17 +2,15 @@
 #include "cpu.h"
 
 void CPU::step() {
-    uint8_t cycles;
 
     if (interrupts.is_halted()) {
-        cycles = 1;
+        timer.tick(1);
     } else {
         uint8_t opcode = fetch();
+        timer.tick(4);
         Instruction instr(opcode);
-        cycles = execute(instr);
+        execute(instr);
     }
-
-    bool tima_overflow = timer.tick(cycles);
 
     if (tima_overflow) {
         interrupts.request_timer_interrupt();

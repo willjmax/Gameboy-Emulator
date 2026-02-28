@@ -17,7 +17,7 @@ bool half_borrow2(uint16_t a, uint16_t b, uint16_t c) {
     return (b & 0x0F) + c > (a & 0x0F);
 }
 
-uint8_t CPU::execute(Instruction instr) {
+void CPU::execute(Instruction instr) {
 
     switch (instr.block) {
         case 0b00:
@@ -745,10 +745,14 @@ uint8_t CPU::execute_block_11(Instruction instr) {
                 uint8_t data = instr.range(4, 3);
                 uint16_t loc = fetch_two_bytes();
 
+
                 if (cond(data)) {
                     pc = loc;
+                    std::cout << "fail" << std::endl;
                     return 4;
                 }
+
+                std::cout << "pass" << std::endl;
 
                 return 3;
             }
