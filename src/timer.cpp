@@ -2,7 +2,7 @@
 #include "timer.h"
 #include <stdexcept>
 
-bool Timer::tick(uint8_t cycles) {
+void Timer::tick(uint8_t cycles) {
 
     if (!stopped) {
         internal_counter += cycles;
@@ -21,14 +21,13 @@ bool Timer::tick(uint8_t cycles) {
         if (tima == 0xFF) {
             uint8_t tma = memory.read(Timer::TMA);
             memory.write(Timer::TIMA, tma);
-            return true;
+            memory.request_timer_interrupt();
         } else {
             memory.write(Timer::TIMA, tima + 1);
         }
 
     }
 
-    return false;
 }
 
 void Timer::reset_div() {

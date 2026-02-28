@@ -35,3 +35,23 @@ void Bus::loadROM(std::ifstream& file, uintmax_t size) {
 void Bus::update_div(uint8_t data) {
     Bus::memory[Bus::DIV] = data;
 }
+
+void Bus::request_vblank_interrupt() {
+    memory[Bus::IF_REG] |= 0x01;
+}
+
+void Bus::request_stat_interrupt() {
+    memory[Bus::IF_REG] |= 0x02;
+}
+
+void Bus::request_timer_interrupt() {
+    memory[Bus::IF_REG] |= 0x04;
+}
+
+void Bus::request_serial_interrupt() {
+    memory[Bus::IF_REG] |= 0x08;
+}
+
+void Bus::request_joypad_interrupt() {
+    memory[Bus::IF_REG] |= 0x0F;
+}

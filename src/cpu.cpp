@@ -1,5 +1,6 @@
 #include <stdexcept>
 #include "cpu.h"
+#include <iostream>
 
 void CPU::step() {
 
@@ -12,9 +13,6 @@ void CPU::step() {
         execute(instr);
     }
 
-    if (tima_overflow) {
-        interrupts.request_timer_interrupt();
-    }
 
     uint16_t interrupt_loc = interrupts.check_interrupts();
     if (interrupt_loc > 0) {

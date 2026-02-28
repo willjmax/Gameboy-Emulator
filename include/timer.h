@@ -7,7 +7,7 @@ class Timer {
             stopped(false),
             internal_counter(0) {}
 
-        bool tick(uint8_t cycles);
+        void tick(uint8_t cycles);
         void reset_div();
 
         void enter_stop_mode();
