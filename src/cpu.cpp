@@ -4,7 +4,7 @@
 void CPU::step() {
 
     if (interrupts.is_halted()) {
-        timer.tick(1);
+        timer.tick(4);
     } else {
         uint8_t opcode = fetch();
         Instruction instr(opcode);
@@ -14,6 +14,7 @@ void CPU::step() {
     uint16_t interrupt_loc = interrupts.check_interrupts();
     if (interrupt_loc > 0) {
         push2(pc);
+        timer.tick(12);
         pc = interrupt_loc;
     }
 

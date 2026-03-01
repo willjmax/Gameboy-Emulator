@@ -67,7 +67,6 @@ uint8_t Interrupt::read_interrupt_flag() {
     return memory.read(Interrupt::IF_REG);
 }
 
-
 void Interrupt::clear_vblank_interrupt() {
     uint8_t if_reg = memory.read(Interrupt::IF_REG);
     memory.write(Interrupt::IF_REG, if_reg & ~0x01);

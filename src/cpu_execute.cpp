@@ -1,5 +1,4 @@
 #include "cpu.h"
-#include <iostream>
 
 bool half_carry(uint16_t a, uint16_t b) {
     return (a & 0x0F) + (b & 0x0F) > 0x0F;
@@ -42,7 +41,7 @@ void CPU::execute_block_00(Instruction instr) {
 
         // NOP
         case 0x00: {
-            timer.tick(1);
+            timer.tick(4);
             return;
         }
 
@@ -737,11 +736,8 @@ void CPU::execute_block_11(Instruction instr) {
                 if (cond(data)) {
                     timer.tick(4);
                     pc = loc;
-                    std::cout << "fail" << std::endl;
                     return;
                 }
-
-                std::cout << "pass" << std::endl;
 
                 return;
             }
