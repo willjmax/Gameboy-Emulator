@@ -9,7 +9,7 @@ void Timer::tick(uint8_t cycles) {
             internal_counter++;
         }
 
-        uint16_t bit = tac_bit();
+        uint8_t bit = tac_bit();
         bool enabled = tac_enabled();
 
         bool old_signal = (old_counter & (1 << bit)) && enabled;
