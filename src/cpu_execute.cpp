@@ -41,7 +41,6 @@ void CPU::execute_block_00(Instruction instr) {
 
         // NOP
         case 0x00: {
-            timer.tick(4);
             return;
         }
 

@@ -19,6 +19,10 @@ class CPU {
             memory(b), 
             timer(Timer(b)),
             interrupts(Interrupt(b)),
+            a(0x01), f(0xB0),
+            b(0x00), c(0x13),
+            d(0x00), e(0xC1),
+            h(0x84), l(0x03),
             pc(0x100), 
             sp(0xFFFE) {};
 
@@ -80,6 +84,8 @@ class CPU {
         void setH(uint8_t flag);
         void setC(uint8_t flag);
         bool cond(uint8_t cond);
+
+        void interrupt_service_routine();
 
         // helper class for testing
         friend class CPUTester;

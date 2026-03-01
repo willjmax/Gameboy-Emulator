@@ -11,14 +11,18 @@ void CPU::step() {
         execute(instr);
     }
 
+    interrupt_service_routine();
+    interrupts.set_ime_from_delay();
+}
+
+void CPU::interrupt_service_routine() {
     uint16_t interrupt_loc = interrupts.check_interrupts();
     if (interrupt_loc > 0) {
+        timer.tick(8);
         push2(pc);
-        timer.tick(12);
         pc = interrupt_loc;
+        timer.tick(4);
     }
-
-    interrupts.set_ime_from_delay();
 }
 
 uint8_t CPU::read_bus(uint16_t loc) {
