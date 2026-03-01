@@ -2,22 +2,24 @@
 #include <filesystem>
 
 #include "gameboy.h"
-
-GameBoy::GameBoy() : memory(), cpu(memory) {
-    running = false;
-}
+#include <iostream>
 
 void GameBoy::loadROM(std::string path) {
     std::ifstream file(path, std::ios::binary);
     std::uintmax_t size = std::filesystem::file_size(path);
-    memory.loadROM(file, size);
+    bus.loadROM(file, size);
 }
 
 void GameBoy::run() {
     running = true;
-
     while (running) {
-        cpu.step();
-    }
+        if (interrupt.is_halted()) {
+            bus.tick(4);
+        } else {
+            cpu.step();
+        }
 
+        cpu.handle_interrupt();
+        interrupt.set_ime_from_delay();
+    }
 }

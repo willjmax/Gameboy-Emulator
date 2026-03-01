@@ -1,13 +1,20 @@
 #pragma once
 
 #include <nlohmann/json.hpp>
+#include "bus.h"
 #include "cpu.h"
+#include "timer.h"
+#include "interrupt.h"
 
 using json = nlohmann::json;
 
 class CPUTester {
     public:
-        CPUTester() : bus(), cpu(bus) {};
+        CPUTester() :
+            interrupt(), timer(interrupt),
+            bus(timer, interrupt),
+            cpu(bus, timer, interrupt) {};
+
         void setup_sm83(json initial);
         bool verify(json final);
 
@@ -24,13 +31,15 @@ class CPUTester {
         uint8_t get_f() { return cpu.f; };
         uint8_t get_h() { return cpu.h; };
         uint8_t get_l() { return cpu.l; };
-        uint8_t get_ime() { return cpu.interrupts.ime; };
+        uint8_t get_ime() { return cpu.interrupt.ime; };
 
         uint8_t get_memory(uint16_t loc) {
-            return cpu.memory.read(loc);
+            return cpu.bus.read(loc);
         }
 
     private:
+        Interrupt interrupt;
+        Timer timer;
         Bus bus;
         CPU cpu;
 

@@ -1,20 +1,28 @@
 #pragma once
 #include <string>
+
+#include "bus.h"
 #include "cpu.h"
-#include "memory.h"
+#include "interrupt.h"
+#include "timer.h"
 
 class GameBoy {
     public:
-        GameBoy();
-
-        Bus& getBus() { return memory; };
-        CPU& getCPU() { return cpu; };
+        GameBoy() :
+            interrupt(),
+            timer(interrupt),
+            bus(timer, interrupt),
+            cpu(bus, timer, interrupt),
+            running(false) {};
 
         void loadROM(std::string path);
         void run();
         
     private:
-        Bus memory;
+        Interrupt interrupt;
+        Timer timer;
+        Bus bus;
         CPU cpu;
+
         bool running;
 };

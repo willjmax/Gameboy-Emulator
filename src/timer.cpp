@@ -1,9 +1,7 @@
-#include "memory.h"
 #include "timer.h"
 #include <stdexcept>
 
 void Timer::tick(uint8_t cycles) {
-
     for (int i = 0; i < cycles; i++) {
         uint16_t old_counter = internal_counter;
 
@@ -11,7 +9,6 @@ void Timer::tick(uint8_t cycles) {
             internal_counter++;
         }
 
-        memory.update_div(internal_counter >> 8);
         uint16_t bit = tac_bit();
         bool enabled = tac_enabled();
 
@@ -19,23 +16,46 @@ void Timer::tick(uint8_t cycles) {
         bool new_signal = (internal_counter & (1 << bit)) && enabled;
 
         if (old_signal & !new_signal) {
-            uint8_t tima = memory.read(Timer::TIMA);
-            uint8_t tma = memory.read(Timer::TMA);
-
             if (tima == 0xFF) {
-                memory.write(Timer::TIMA, tma);
-                memory.request_timer_interrupt();
+                tima = tma;
+                interrupt.request_timer_interrupt();
             } else {
-                memory.write(Timer::TIMA, tima+1);
+                tima++;
             }
-
         }
     }
 }
 
+uint8_t Timer::read_div() {
+    return internal_counter >> 8;
+}
+
+uint8_t Timer::read_tac() {
+    return Timer::tac;
+}
+
+uint8_t Timer::read_tima() {
+    return Timer::tima;
+}
+
+uint8_t Timer::read_tma() {
+    return Timer::tma;
+}
+
 void Timer::reset_div() {
     internal_counter = 0;
-    memory.write(Timer::DIV, 0x00);
+}
+
+void Timer::write_tac(uint8_t data) {
+    Timer::tac = data;
+}
+
+void Timer::write_tima(uint8_t data) {
+    Timer::tima = data;
+}
+
+void Timer::write_tma(uint8_t data) {
+    Timer::tma = data;
 }
 
 void Timer::enter_stop_mode() {
@@ -47,22 +67,20 @@ void Timer::exit_stop_mode() {
 }
 
 void Timer::enable_tac() {
-    uint8_t tac = memory.read(Timer::TAC);
-    memory.write(Timer::TAC, tac | 0x04);
+    Timer::tac |= 0x04;
 }
 
 void Timer::disable_tac() {
-    uint8_t tac = memory.read(Timer::TAC);
-    memory.write(Timer::TAC, tac & ~0x04);
+    Timer::tac &= ~0x04;
 }
 
 bool Timer::tac_enabled() {
-    return (memory.read(Timer::TAC) & 0x04) == 0x04;
+    return (Timer::tac & 0x04) == 0x04;
 }
 
 int Timer::tac_bit() {
 
-    switch (memory.read(Timer::TAC) & 0x03) {
+    switch (Timer::tac & 0x03) {
         case 0b00: return 9;
         case 0b01: return 3;
         case 0b10: return 5;

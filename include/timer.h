@@ -1,14 +1,27 @@
-#include "memory.h"
+#pragma once
+#include <cstdint>
+#include "interrupt.h"
 
 class Timer {
     public:
-        Timer(Bus& b) : 
-            memory(b), 
+        Timer(Interrupt& i) : 
+            interrupt(i),
             stopped(false),
-            internal_counter(0) {}
+            internal_counter(0),
+            tima(0),
+            tac(0) {};
 
         void tick(uint8_t cycles);
+
+        uint8_t read_div();
+        uint8_t read_tima();
+        uint8_t read_tma();
+        uint8_t read_tac();
+
         void reset_div();
+        void write_tima(uint8_t data);
+        void write_tma(uint8_t data);
+        void write_tac(uint8_t data);
 
         void enter_stop_mode();
         void exit_stop_mode();
@@ -19,14 +32,12 @@ class Timer {
         int tac_bit();
 
     private:
-        Bus& memory;
+        Interrupt& interrupt;
         bool stopped;
         uint16_t internal_counter;
-
-        static constexpr uint16_t DIV  = 0xFF04;
-        static constexpr uint16_t TIMA = 0xFF05;
-        static constexpr uint16_t TMA  = 0xFF06;
-        static constexpr uint16_t TAC  = 0xFF07;
+        uint8_t tima;
+        uint8_t tma;
+        uint8_t tac;
 
         friend class CPUTester;
 };

@@ -1,10 +1,7 @@
 #include "interrupt.h"
 
 uint16_t Interrupt::check_interrupts() {
-    uint8_t flags = read_interrupt_flag();
-    uint8_t enabled = read_interrupt_enable();
-
-    uint8_t interrupts = flags & enabled;
+    uint8_t interrupts = if_reg & if_enable;
 
     if (interrupts & 0x01) {
         halted = false;
@@ -28,7 +25,6 @@ uint16_t Interrupt::check_interrupts() {
 
     if (interrupts & 0x04) {
         halted = false;
-
         if (ime) {
             ime = false;
             clear_timer_interrupt();
@@ -59,51 +55,58 @@ uint16_t Interrupt::check_interrupts() {
     return 0;
 }
 
-uint8_t Interrupt::read_interrupt_enable() {
-    return memory.read(Interrupt::IF_ENABLE);
+void Interrupt::request_vblank_interrupt() {
+    Interrupt::if_reg |= 0x01;
 }
 
-uint8_t Interrupt::read_interrupt_flag() {
-    return memory.read(Interrupt::IF_REG);
+void Interrupt::request_stat_interrupt() {
+    Interrupt::if_reg |= 0x02;
+}
+
+void Interrupt::request_timer_interrupt() {
+    Interrupt::if_reg |= 0x04;
+}
+
+void Interrupt::request_serial_interrupt() {
+    Interrupt::if_reg |= 0x08;
+}
+
+void Interrupt::request_joypad_interrupt() {
+    Interrupt::if_reg |= 0x0F;
 }
 
 void Interrupt::clear_vblank_interrupt() {
-    uint8_t if_reg = memory.read(Interrupt::IF_REG);
-    memory.write(Interrupt::IF_REG, if_reg & ~0x01);
+    Interrupt::if_reg &= ~0x01;
 }
 
 void Interrupt::clear_stat_interrupt() {
-    uint8_t if_reg = memory.read(Interrupt::IF_REG);
-    memory.write(Interrupt::IF_REG, if_reg & ~0x02);
+     Interrupt::if_reg &= ~0x02;
 }
 
 void Interrupt::clear_timer_interrupt() {
-    uint8_t if_reg = memory.read(Interrupt::IF_REG);
-    memory.write(Interrupt::IF_REG, if_reg & ~0x04);
+     Interrupt::if_reg &= ~0x04;
 }
 
 void Interrupt::clear_serial_interrupt() {
-    uint8_t if_reg = memory.read(Interrupt::IF_REG);
-    memory.write(Interrupt::IF_REG, if_reg & ~0x08);
+     Interrupt::if_reg &= ~0x08;
 }
 
 void Interrupt::clear_joypad_interrupt() {
-    uint8_t if_reg = memory.read(Interrupt::IF_REG);
-    memory.write(Interrupt::IF_REG, if_reg & ~0x0F);
+     Interrupt::if_reg &= ~0x0F;
 }
 
 void Interrupt::set_ime_delay() {
-    delay_ime = true;
+    Interrupt::delay_ime = true;
 }
 
 void Interrupt::set_ime() {
-    ime = true;
+    Interrupt::ime = true;
 }
 
 void Interrupt::clear_ime() {
-    ime = false;
-    trigger_set_ime = false;
-    delay_ime = false;
+    Interrupt::ime = false;
+    Interrupt::trigger_set_ime = false;
+    Interrupt::delay_ime = false;
 }
 
 void Interrupt::set_ime_from_delay() {
@@ -126,4 +129,24 @@ bool Interrupt::is_halted() {
 
 void Interrupt::halt_cpu() {
     halted = true;
+}
+
+bool Interrupt::ime_enabled() {
+    return ime;
+}
+
+uint8_t Interrupt::read_if_reg() {
+    return if_reg | 0xE0;
+}
+
+uint8_t Interrupt::read_if_enable() {
+    return if_enable;
+}
+
+void Interrupt::write_if_reg(uint8_t data) {
+    if_reg = data;
+}
+
+void Interrupt::write_if_enable(uint8_t data) {
+    if_enable = data;
 }

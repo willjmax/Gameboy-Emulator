@@ -80,7 +80,7 @@ void CPU::execute_block_00(Instruction instr) {
         case 0x18: {
             int8_t offset = (int8_t)fetch();
             pc += offset;
-            timer.tick(4);
+            bus.tick(4);
             return;
         }
 
@@ -173,7 +173,7 @@ void CPU::execute_block_00(Instruction instr) {
         int8_t offset = (int8_t)fetch();
         if (cond(data)) {
             pc += offset;
-            timer.tick(4);
+            bus.tick(4);
         }
         return;
     }
@@ -200,15 +200,15 @@ void CPU::execute_block_00(Instruction instr) {
             uint8_t r16 = instr.range(5, 4);
             uint16_t data = read_r16(r16);
             write_r16(r16, data + 1);
-            timer.tick(4);
+            bus.tick(4);
             return;
         }
 
         // LD [imm16],sp
         case 0b1000: {
             uint16_t loc = fetch_two_bytes();
-            write_bus(loc, sp & 0xFF);
-            write_bus(loc + 1, sp >> 8);
+            bus.write(loc, sp & 0xFF);
+            bus.write(loc + 1, sp >> 8);
             return;
         } 
                      
@@ -222,7 +222,7 @@ void CPU::execute_block_00(Instruction instr) {
             setC(result > 0x0000FFFF);
 
             hl = result & 0x0000FFFF;
-            timer.tick(4);
+            bus.tick(4);
             return;
         }
 
@@ -238,7 +238,7 @@ void CPU::execute_block_00(Instruction instr) {
             uint8_t r16 = instr.range(5, 4);
             uint16_t data = read_r16(r16);
             write_r16(r16, data - 1);
-            timer.tick(4);
+            bus.tick(4);
             return;
         }
     }
@@ -288,7 +288,7 @@ void CPU::execute_block_01(Instruction instr) {
 
     // HALT
     if (instr.opcode == 0x76) {
-        interrupts.halt_cpu();
+        interrupt.halt_cpu();
         return;
     }
 
@@ -434,7 +434,7 @@ void CPU::execute_block_11(Instruction instr) {
         // JP imm16
         case 0xC3: {
             pc = fetch_two_bytes();
-            timer.tick(4);
+            bus.tick(4);
             return;
         }
 
@@ -474,7 +474,7 @@ void CPU::execute_block_11(Instruction instr) {
             uint8_t lo = pop();
             uint8_t hi = pop();
             pc = (hi << 8) | lo;
-            timer.tick(4);
+            bus.tick(4);
             return;
         }
 
@@ -488,7 +488,7 @@ void CPU::execute_block_11(Instruction instr) {
         // CALL imm16
         case 0xCD: {
             uint16_t loc = fetch_two_bytes();
-            timer.tick(4);
+            bus.tick(4);
             push((pc >> 8) & 0xFF);
             push(pc & 0xFF);
             pc = loc;
@@ -510,11 +510,11 @@ void CPU::execute_block_11(Instruction instr) {
 
         // RETI
         case 0xD9: {
-            interrupts.set_ime();
+            interrupt.set_ime();
             uint8_t lo = pop();
             uint8_t hi = pop();
             pc = (hi << 8) | lo;
-            timer.tick(4);
+            bus.tick(4);
             return;
         }
 
@@ -536,14 +536,14 @@ void CPU::execute_block_11(Instruction instr) {
         case 0xE0: {
             uint8_t offset = fetch();
             uint16_t loc = 0xFF00 | (uint16_t)offset;
-            write_bus(loc, a);
+            bus.write(loc, a);
             return;
         }
 
         // LDH [C],A
         case 0xE2: {
             uint16_t loc = 0xFF00 | c;
-            write_bus(loc, a);
+            bus.write(loc, a);
             return;
         }
 
@@ -568,8 +568,8 @@ void CPU::execute_block_11(Instruction instr) {
             setH((sp & 0x000F) + (offset & 0x0F) > 0x0F);
             setC((sp & 0x00FF) + (offset & 0x00FF) > 0xFF);
             sp = result;
-            timer.tick(4);
-            timer.tick(4);
+            bus.tick(4);
+            bus.tick(4);
             return;
         }
 
@@ -582,7 +582,7 @@ void CPU::execute_block_11(Instruction instr) {
         // LD [imm16],A
         case 0xEA: {
             uint16_t loc = fetch_two_bytes();
-            write_bus(loc, a);
+            bus.write(loc, a);
             return;
         }
 
@@ -604,27 +604,27 @@ void CPU::execute_block_11(Instruction instr) {
         case 0xF0: {
             uint8_t lo = fetch();
             uint16_t loc = 0xFF00 | (uint16_t)lo;
-            a = read_bus(loc);
+            a = bus.read(loc);
             return;
         }
 
         // LDH A,[C]
         case 0xF2: {
             uint16_t loc = 0xFF00 | c;
-            a = read_bus(loc);
+            a = bus.read(loc);
             return;
         }
 
         // LD A,[imm16]
         case 0xFA: {
             uint16_t loc = fetch_two_bytes();
-            a = read_bus(loc);
+            a = bus.read(loc);
             return;
         }
 
         // DI
         case 0xF3: {
-            interrupts.clear_ime();
+            interrupt.clear_ime();
             return;
         }
 
@@ -651,20 +651,20 @@ void CPU::execute_block_11(Instruction instr) {
             setC((sp & 0x00FF) + (offset & 0x00FF) > 0xFF);
 
             hl = result;
-            timer.tick(4);
+            bus.tick(4);
             return;
         }
 
         // LD SP,HL
         case 0xF9: {
             sp = hl;
-            timer.tick(4);
+            bus.tick(4);
             return;
         }
 
         // EI
         case 0xFB: {
-            interrupts.set_ime_delay();
+            interrupt.set_ime_delay();
             return;
         }
 
@@ -700,7 +700,7 @@ void CPU::execute_block_11(Instruction instr) {
             uint16_t data = read_r16_stack(r16);
             uint8_t lo = data & 0x00FF;
             uint8_t hi = data >> 8;
-            timer.tick(4);
+            bus.tick(4);
             push(hi);
             push(lo);
             return;
@@ -713,14 +713,14 @@ void CPU::execute_block_11(Instruction instr) {
             // RET cond
             case 0b000: {
                 uint8_t data = instr.range(4, 3);
-                timer.tick(4);
+                bus.tick(4);
 
                 if (cond(data)) {
                     uint8_t lo = pop();
                     uint8_t hi = pop();
                     uint16_t loc = (hi << 8) | lo;
                     pc = loc;
-                    timer.tick(4);
+                    bus.tick(4);
                 }
 
                 return;
@@ -733,7 +733,7 @@ void CPU::execute_block_11(Instruction instr) {
 
 
                 if (cond(data)) {
-                    timer.tick(4);
+                    bus.tick(4);
                     pc = loc;
                     return;
                 }
@@ -747,7 +747,7 @@ void CPU::execute_block_11(Instruction instr) {
                 uint16_t loc = fetch_two_bytes();
 
                 if (cond(data)) {
-                    timer.tick(4);
+                    bus.tick(4);
                     push((pc >> 8) & 0xFF);
                     push(pc & 0xFF);
                     pc = loc;
@@ -769,7 +769,7 @@ void CPU::execute_block_11(Instruction instr) {
         push(hi);
         push(lo);
         pc = target;
-        timer.tick(4);
+        bus.tick(4);
         return;
     }
 

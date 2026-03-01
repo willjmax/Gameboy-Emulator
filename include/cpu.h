@@ -1,8 +1,6 @@
 #pragma once
 #include "instruction.h"
-#include "memory.h"
-#include "interrupt.h"
-#include "timer.h"
+#include "bus.h"
 
 #define REG_PAIR(hi, lo, combined) \
     union {                        \
@@ -15,23 +13,21 @@
 
 class CPU {
     public:
-        CPU(Bus& b) : 
-            memory(b), 
-            timer(Timer(b)),
-            interrupts(Interrupt(b)),
+        CPU(Bus& b, Timer& t, Interrupt& i) : 
+            bus(b), timer(t), interrupt(i),
             a(0x01), f(0xB0),
             b(0x00), c(0x13),
             d(0x00), e(0xC1),
             h(0x84), l(0x03),
-            pc(0x100), 
-            sp(0xFFFE) {};
+            pc(0x100), sp(0xFFFE) {};
 
         void step();
+        void handle_interrupt();
 
     private:
-        Bus& memory;
-        Timer timer;
-        Interrupt interrupts;
+        Bus& bus;
+        Timer& timer;
+        Interrupt& interrupt;
 
         REG_PAIR(a, f, af);
         REG_PAIR(b, c, bc);
@@ -84,8 +80,6 @@ class CPU {
         void setH(uint8_t flag);
         void setC(uint8_t flag);
         bool cond(uint8_t cond);
-
-        void interrupt_service_routine();
 
         // helper class for testing
         friend class CPUTester;
