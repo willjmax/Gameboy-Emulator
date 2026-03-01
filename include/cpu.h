@@ -41,18 +41,22 @@ class CPU {
         uint8_t fetch();
         uint16_t fetch_two_bytes();
 
+        // bus operations
+        uint8_t read_bus(uint16_t loc);
+        void write_bus(uint16_t loc, uint8_t data);
+
         // stack ops
         void push(uint8_t data);
         void push2(uint16_t data);
         uint8_t pop();
 
         // execute instruction
-        uint8_t execute(Instruction instr);
-        uint8_t execute_block_00(Instruction instr);
-        uint8_t execute_block_01(Instruction instr);
-        uint8_t execute_block_10(Instruction instr);
-        uint8_t execute_block_11(Instruction instr);
-        uint8_t execute_cb(Instruction instr);
+        void execute(Instruction instr);
+        void execute_block_00(Instruction instr);
+        void execute_block_01(Instruction instr);
+        void execute_block_10(Instruction instr);
+        void execute_block_11(Instruction instr);
+        void execute_cb(Instruction instr);
 
         // read from register
         uint8_t read_r8(uint8_t r8);

@@ -1,5 +1,4 @@
 #include "cpu.h"
-#include <iostream>
 
 bool half_carry(uint16_t a, uint16_t b) {
     return (a & 0x0F) + (b & 0x0F) > 0x0F;
@@ -17,29 +16,33 @@ bool half_borrow2(uint16_t a, uint16_t b, uint16_t c) {
     return (b & 0x0F) + c > (a & 0x0F);
 }
 
-uint8_t CPU::execute(Instruction instr) {
+void CPU::execute(Instruction instr) {
 
     switch (instr.block) {
         case 0b00:
-            return execute_block_00(instr);
+            execute_block_00(instr);
+            break;
         case 0b01:
-            return execute_block_01(instr);
+            execute_block_01(instr);
+            break;
         case 0b10:
-            return execute_block_10(instr);
+            execute_block_10(instr);
+            break;
         case 0b11:
-            return execute_block_11(instr);
+            execute_block_11(instr);
+            break;
     }
 
-    return 1;
 }
 
-uint8_t CPU::execute_block_00(Instruction instr) {
+void CPU::execute_block_00(Instruction instr) {
 
     switch (instr.opcode) {
 
         // NOP
         case 0x00: {
-            return 1;
+            timer.tick(4);
+            return;
         }
 
         // RLCA
@@ -53,8 +56,7 @@ uint8_t CPU::execute_block_00(Instruction instr) {
             setN(0);
             setH(0);
             setC(new_carry);
-            
-            return 1;
+            return;
         }
 
         // RRCA
@@ -65,50 +67,46 @@ uint8_t CPU::execute_block_00(Instruction instr) {
             setN(0);
             setH(0);
             setC(new_carry);
-            return 1;
+            return;
         }
 
         // STOP
         case 0x10: {
             timer.enter_stop_mode();
             timer.reset_div();
-            return 0;
+            return;
         }
         
         // JR imm8
         case 0x18: {
             int8_t offset = (int8_t)fetch();
             pc += offset;
-            return 3;
+            timer.tick(4);
+            return;
         }
 
         // RLA
         case 0x17: {
             uint8_t new_carry = a >> 7;
             uint8_t shifted = (a << 1) | getC();
-
             a = shifted;
-
             setZ(0);
             setN(0);
             setH(0);
             setC(new_carry);
-
-            return 1;
+            return;
         }
 
         // RRA
         case 0x1F: {
             uint8_t new_carry = a & 0x01;
             uint8_t shifted = (a >> 1) | (getC() << 7);
-
             a = shifted;
             setZ(0);
             setN(0);
             setH(0);
             setC(new_carry);
-
-            return 1;
+            return;
         }
 
         // DAA
@@ -141,7 +139,7 @@ uint8_t CPU::execute_block_00(Instruction instr) {
             setZ(a == 0);
             setH(0);
 
-            return 1;
+            return;
         }
 
         // CPL
@@ -149,7 +147,7 @@ uint8_t CPU::execute_block_00(Instruction instr) {
             a = ~a;
             setN(1);
             setH(1);
-            return 1;
+            return;
         }
 
         // SCF
@@ -157,7 +155,7 @@ uint8_t CPU::execute_block_00(Instruction instr) {
             setN(0);
             setH(0);
             setC(1);
-            return 1;
+            return;
         }
 
         // CCF
@@ -165,7 +163,7 @@ uint8_t CPU::execute_block_00(Instruction instr) {
             setN(0);
             setH(0);
             setC(getC() == 0);
-            return 1;
+            return;
         }
 
     }
@@ -176,9 +174,9 @@ uint8_t CPU::execute_block_00(Instruction instr) {
         int8_t offset = (int8_t)fetch();
         if (cond(data)) {
             pc += offset;
-            return 3;
+            timer.tick(4);
         }
-        return 2;
+        return;
     }
 
     switch (instr.range(3, 0)) {
@@ -188,14 +186,14 @@ uint8_t CPU::execute_block_00(Instruction instr) {
             uint8_t r16 = instr.range(5, 4);
             uint16_t data = fetch_two_bytes();
             write_r16(r16, data);
-            return 3;
+            return;
         }
 
         // LD [r16mem],a
         case 0b0010: {
             uint8_t r16 = instr.range(5, 4);
             write_r16_mem(r16, a);
-            return 3;
+            return;
         }
 
         // INC r16
@@ -203,18 +201,19 @@ uint8_t CPU::execute_block_00(Instruction instr) {
             uint8_t r16 = instr.range(5, 4);
             uint16_t data = read_r16(r16);
             write_r16(r16, data + 1);
-            return 2;
+            timer.tick(4);
+            return;
         }
 
         // LD [imm16],sp
         case 0b1000: {
             uint16_t loc = fetch_two_bytes();
-            memory.write(loc, sp & 0xFF);
-            memory.write(loc + 1, sp >> 8);
-            return 3;
+            write_bus(loc, sp & 0xFF);
+            write_bus(loc + 1, sp >> 8);
+            return;
         } 
                      
-        // ADD hl,r16
+        // ADD HL,r16
         case 0b1001: {
             uint8_t r16 = instr.range(5, 4);
             uint32_t data = read_r16(r16);
@@ -224,14 +223,15 @@ uint8_t CPU::execute_block_00(Instruction instr) {
             setC(result > 0x0000FFFF);
 
             hl = result & 0x0000FFFF;
-            return 2;
+            timer.tick(4);
+            return;
         }
 
         // LD A,[r16mem]
         case 0b1010: {
             uint16_t r16 = instr.range(5, 4);
             a = read_r16_mem(r16);
-            return 2;
+            return;
         }
 
         // DEC r16
@@ -239,7 +239,8 @@ uint8_t CPU::execute_block_00(Instruction instr) {
             uint8_t r16 = instr.range(5, 4);
             uint16_t data = read_r16(r16);
             write_r16(r16, data - 1);
-            return 2;
+            timer.tick(4);
+            return;
         }
     }
 
@@ -256,8 +257,7 @@ uint8_t CPU::execute_block_00(Instruction instr) {
             setZ(result == 0);
             setN(0);
             setH(half_carry(data, 1));
-
-            return 1;
+            return;
         }
 
         // DEC r8
@@ -271,8 +271,7 @@ uint8_t CPU::execute_block_00(Instruction instr) {
             setZ(result == 0);
             setN(1);
             setH(half_borrow(data, 1));
-
-            return 1;
+            return;
         }
 
         // LD r8,imm8
@@ -280,20 +279,18 @@ uint8_t CPU::execute_block_00(Instruction instr) {
             uint8_t r8 = instr.range(5, 3);
             uint8_t data = fetch();
             write_r8(r8, data);
-            return 2;
+            return;
         }
     }
 
-
-    throw std::runtime_error("Not implemented: " + std::format("Opcode not implemented: 0x{:02X}", instr.opcode));
 }
 
-uint8_t CPU::execute_block_01(Instruction instr) {
+void CPU::execute_block_01(Instruction instr) {
 
     // HALT
     if (instr.opcode == 0x76) {
         interrupts.halt_cpu();
-        return 0;
+        return;
     }
 
     uint8_t src = instr.range(2, 0);
@@ -302,10 +299,10 @@ uint8_t CPU::execute_block_01(Instruction instr) {
 
     write_r8(dest, data);
 
-    return 1;
+    return;
 }
 
-uint8_t CPU::execute_block_10(Instruction instr) {
+void CPU::execute_block_10(Instruction instr) {
     uint8_t op = instr.range(5, 3);
     uint8_t r8 = instr.range(2, 0);
 
@@ -323,7 +320,7 @@ uint8_t CPU::execute_block_10(Instruction instr) {
             setC(result > 0xFF);
 
             a = result & 0xFF;
-            break;
+            return;
         }
 
         // ADC A,r8
@@ -339,7 +336,7 @@ uint8_t CPU::execute_block_10(Instruction instr) {
             setC(result > 0xFF);
 
             a = result & 0xFF;
-            break;
+            return;
         }
 
         // SUB A,r8
@@ -354,7 +351,7 @@ uint8_t CPU::execute_block_10(Instruction instr) {
             setC(val > a16);
 
             a = result & 0xFF;
-            break;
+            return;
         }
 
         // SBC A,r8
@@ -370,7 +367,7 @@ uint8_t CPU::execute_block_10(Instruction instr) {
             setC((val + carry) > a16);
 
             a = result & 0xFF;
-            break;
+            return;
         }
 
         // AND A,r8
@@ -383,7 +380,7 @@ uint8_t CPU::execute_block_10(Instruction instr) {
             setH(1);
             setC(0);
             a = result;
-            break;
+            return;
         }
 
         // XOR A,r8
@@ -397,7 +394,7 @@ uint8_t CPU::execute_block_10(Instruction instr) {
             setC(0);
 
             a = result;
-            break;
+            return;
         }
 
         // OR A,r8
@@ -411,7 +408,7 @@ uint8_t CPU::execute_block_10(Instruction instr) {
             setC(0);
 
             a = result;
-            break;
+            return;
         }
 
         // CP A,r8
@@ -425,29 +422,24 @@ uint8_t CPU::execute_block_10(Instruction instr) {
             setH(half_borrow(a16, val));
             setC(val > a16);
 
-            break;
+            return;
         }
     }
-
-    if (r8 == 6) {
-        return 2;
-    }
-
-    return 1;
 }
 
 
-uint8_t CPU::execute_block_11(Instruction instr) {
+void CPU::execute_block_11(Instruction instr) {
 
     switch (instr.opcode) {
 
         // JP imm16
         case 0xC3: {
             pc = fetch_two_bytes();
-            return 4;
+            timer.tick(4);
+            return;
         }
 
-        // ADD a,imm8
+        // ADD A,imm8
         case 0xC6: {
             uint16_t a16 = (uint16_t)a;
             uint16_t val = fetch();
@@ -459,7 +451,7 @@ uint8_t CPU::execute_block_11(Instruction instr) {
             setC(result > 0xFF);
 
             a = result & 0xFF;
-            return 2;
+            return;
         }
 
         // ADC a,imm8
@@ -475,7 +467,7 @@ uint8_t CPU::execute_block_11(Instruction instr) {
             setC(result > 0xFF);
 
             a = result & 0xFF;
-            return 1;
+            return;
        }
 
         // RET
@@ -483,22 +475,25 @@ uint8_t CPU::execute_block_11(Instruction instr) {
             uint8_t lo = pop();
             uint8_t hi = pop();
             pc = (hi << 8) | lo;
-            return 4;
+            timer.tick(4);
+            return;
         }
 
         // CB
         case 0xCB: {
             uint8_t cb_instr = fetch();
-            return execute_cb(cb_instr);
+            execute_cb(cb_instr);
+            return;
         }
 
         // CALL imm16
         case 0xCD: {
             uint16_t loc = fetch_two_bytes();
+            timer.tick(4);
             push((pc >> 8) & 0xFF);
             push(pc & 0xFF);
             pc = loc;
-            return 6;
+            return;
         }
 
         // SUB a,imm8
@@ -506,15 +501,12 @@ uint8_t CPU::execute_block_11(Instruction instr) {
             uint16_t a16 = (uint16_t)a;
             uint16_t val = fetch();
             uint16_t result = a16 - val;
-
             setZ((result & 0xFF) == 0);
             setN(1);
             setH(half_borrow(a16, val));
             setC(val > a16);
-
             a = result & 0xFF;
-
-            return 2;
+            return;
         }
 
         // RETI
@@ -523,7 +515,8 @@ uint8_t CPU::execute_block_11(Instruction instr) {
             uint8_t lo = pop();
             uint8_t hi = pop();
             pc = (hi << 8) | lo;
-            return 4;
+            timer.tick(4);
+            return;
         }
 
         // SBC a,imm8
@@ -532,73 +525,66 @@ uint8_t CPU::execute_block_11(Instruction instr) {
             uint16_t val = fetch();
             uint16_t carry = (uint16_t)getC();
             uint16_t result = a16 - val - carry;
-
             setZ((result & 0xFF) == 0);
             setN(1);
             setH(half_borrow2(a16, val, carry));
             setC((val + carry) > a16);
-
             a = result & 0xFF;
-
-            return 2;
+            return;
         }
 
         // LDH [imm8],A
         case 0xE0: {
             uint8_t offset = fetch();
             uint16_t loc = 0xFF00 | (uint16_t)offset;
-            memory.write(loc, a);
-            return 3;
+            write_bus(loc, a);
+            return;
         }
 
         // LDH [C],A
         case 0xE2: {
             uint16_t loc = 0xFF00 | c;
-            memory.write(loc, a);
-            return 2;
+            write_bus(loc, a);
+            return;
         }
 
         // AND A,imm8
         case 0xE6: {
             uint8_t data = fetch();
             uint8_t result = a & data;
-
             setZ(result == 0);
             setN(0);
             setH(1);
             setC(0);
-
             a = result;
-
-            return 2;
+            return;
         }
 
-        // ADD sp,imm8
+        // ADD SP,imm8
         case 0xE8: {
             int8_t offset = (int8_t)fetch();
             uint16_t result = sp + offset;
-
             setZ(0);
             setN(0);
             setH((sp & 0x000F) + (offset & 0x0F) > 0x0F);
             setC((sp & 0x00FF) + (offset & 0x00FF) > 0xFF);
-
             sp = result;
-
-            return 4;
+            timer.tick(4);
+            timer.tick(4);
+            return;
         }
 
         // JP HL
         case 0xE9: {
             pc = hl;
-            return 1;
+            return;
         }
 
         // LD [imm16],A
         case 0xEA: {
             uint16_t loc = fetch_two_bytes();
-            memory.write(loc, a);
-            return 4;
+            write_bus(loc, a);
+            return;
         }
 
         // XOR a,imm8
@@ -612,49 +598,47 @@ uint8_t CPU::execute_block_11(Instruction instr) {
             setC(0);
 
             a = result;
-            return 2;
+            return;
         }
 
         // LDH A,[imm8]
         case 0xF0: {
             uint8_t lo = fetch();
             uint16_t loc = 0xFF00 | (uint16_t)lo;
-            a = memory.read(loc);
-            return 3;
+            a = read_bus(loc);
+            return;
         }
 
         // LDH A,[C]
         case 0xF2: {
             uint16_t loc = 0xFF00 | c;
-            a = memory.read(loc);
-            return 2;
+            a = read_bus(loc);
+            return;
         }
 
         // LD A,[imm16]
         case 0xFA: {
             uint16_t loc = fetch_two_bytes();
-            a = memory.read(loc);
-            return 2;
+            a = read_bus(loc);
+            return;
         }
 
         // DI
         case 0xF3: {
             interrupts.clear_ime();
-            return 4;
+            return;
         }
 
         // OR a,imm8
         case 0xF6: {
             uint8_t val = fetch();
             uint8_t result = a | val;
-
             setZ(result == 0);
             setN(0);
             setH(0);
             setC(0);
-
             a = result;
-            return 2;
+            return;
         }
 
         // LD HL, sp+imm8
@@ -668,19 +652,21 @@ uint8_t CPU::execute_block_11(Instruction instr) {
             setC((sp & 0x00FF) + (offset & 0x00FF) > 0xFF);
 
             hl = result;
-            return 3;
+            timer.tick(4);
+            return;
         }
 
         // LD SP,HL
         case 0xF9: {
             sp = hl;
-            return 2;
+            timer.tick(4);
+            return;
         }
 
         // EI
         case 0xFB: {
             interrupts.set_ime_delay();
-            return 4;
+            return;
         }
 
         // CP A,imm8
@@ -693,7 +679,7 @@ uint8_t CPU::execute_block_11(Instruction instr) {
             setN(1);
             setH(half_borrow(a16, val));
             setC(val > a16);
-            return 2;
+            return;
         }
     }
 
@@ -706,7 +692,7 @@ uint8_t CPU::execute_block_11(Instruction instr) {
             uint8_t hi = pop();
             uint16_t data = (hi << 8) | lo;
             write_r16_stack(r16, data);
-            return 3;
+            return;
         }
 
         // PUSH
@@ -715,9 +701,10 @@ uint8_t CPU::execute_block_11(Instruction instr) {
             uint16_t data = read_r16_stack(r16);
             uint8_t lo = data & 0x00FF;
             uint8_t hi = data >> 8;
+            timer.tick(4);
             push(hi);
             push(lo);
-            return 4;
+            return;
         }
     }
 
@@ -727,17 +714,17 @@ uint8_t CPU::execute_block_11(Instruction instr) {
             // RET cond
             case 0b000: {
                 uint8_t data = instr.range(4, 3);
+                timer.tick(4);
 
                 if (cond(data)) {
                     uint8_t lo = pop();
                     uint8_t hi = pop();
                     uint16_t loc = (hi << 8) | lo;
                     pc = loc;
-
-                    return 5;
+                    timer.tick(4);
                 }
 
-                return 2;
+                return;
             }
 
             // JP cond,imm16
@@ -745,12 +732,14 @@ uint8_t CPU::execute_block_11(Instruction instr) {
                 uint8_t data = instr.range(4, 3);
                 uint16_t loc = fetch_two_bytes();
 
+
                 if (cond(data)) {
+                    timer.tick(4);
                     pc = loc;
-                    return 4;
+                    return;
                 }
 
-                return 3;
+                return;
             }
 
             // CALL cond,imm16
@@ -759,13 +748,13 @@ uint8_t CPU::execute_block_11(Instruction instr) {
                 uint16_t loc = fetch_two_bytes();
 
                 if (cond(data)) {
+                    timer.tick(4);
                     push((pc >> 8) & 0xFF);
                     push(pc & 0xFF);
                     pc = loc;
-                    return 6;
                 }
 
-                return 3;
+                return;
             }
 
             case 0b110:
@@ -781,14 +770,15 @@ uint8_t CPU::execute_block_11(Instruction instr) {
         push(hi);
         push(lo);
         pc = target;
-
-        return 4;
+        timer.tick(4);
+        return;
     }
 
     throw std::runtime_error("Not implemented: " + std::format("Opcode not implemented: 0x{:02X}", instr.opcode));
+
 }
 
-uint8_t CPU::execute_cb(Instruction instr) {
+void CPU::execute_cb(Instruction instr) {
 
     if (instr.block == 0b00) {
         uint8_t r8 = instr.range(2, 0);
@@ -806,7 +796,7 @@ uint8_t CPU::execute_cb(Instruction instr) {
                 setN(0);
                 setH(0);
 
-                return 2;
+                return;
             }
 
             // RRC r8
@@ -819,7 +809,7 @@ uint8_t CPU::execute_cb(Instruction instr) {
                 setN(0);
                 setH(0);
             
-                return 2;
+                return;
             }
 
             // RL r8
@@ -833,7 +823,7 @@ uint8_t CPU::execute_cb(Instruction instr) {
                 setH(0);
                 setC(new_carry);
 
-                return 2;
+                return;
             }
 
             // RR r8
@@ -847,7 +837,7 @@ uint8_t CPU::execute_cb(Instruction instr) {
                 setH(0);
                 setC(new_carry);
 
-                return 2;
+                return;
             }
 
             // SLA r8
@@ -861,7 +851,7 @@ uint8_t CPU::execute_cb(Instruction instr) {
                 setH(0);
                 setC(new_carry);
 
-                return 2;
+                return;
             }
 
             // SRA r8
@@ -875,7 +865,7 @@ uint8_t CPU::execute_cb(Instruction instr) {
                 setH(0);
                 setC(new_carry);
 
-                return 2;
+                return;
             }
 
             // SWAP r8
@@ -888,7 +878,7 @@ uint8_t CPU::execute_cb(Instruction instr) {
                 setH(0);
                 setC(0);
 
-                return 2;
+                return;
             }
 
             // SRL r8
@@ -902,7 +892,7 @@ uint8_t CPU::execute_cb(Instruction instr) {
                 setH(0);
                 setC(new_carry);
 
-                return 2;
+                return;
             }
         }
     }
@@ -921,7 +911,7 @@ uint8_t CPU::execute_cb(Instruction instr) {
             setN(0);
             setH(1);
 
-            return 2;
+            return;
         }
 
         //RES b3,r8
@@ -929,7 +919,7 @@ uint8_t CPU::execute_cb(Instruction instr) {
             uint8_t off = data & ~(1 << b3);
             write_r8(r8, off);
 
-            return 2;
+            return;
         }
 
         // SET b3,r8
@@ -937,9 +927,8 @@ uint8_t CPU::execute_cb(Instruction instr) {
             uint8_t on = data | (1 << b3);
             write_r8(r8, on);
 
-            return 2;
+            return;
         }
     }
 
-    throw std::runtime_error("Not implemented: " + std::format("Opcode not implemented: 0xCB 0x{:02X}", instr.opcode));
 }

@@ -2,44 +2,47 @@
 #include "cpu.h"
 
 void CPU::step() {
-    uint8_t cycles;
 
     if (interrupts.is_halted()) {
-        cycles = 1;
+        timer.tick(4);
     } else {
         uint8_t opcode = fetch();
         Instruction instr(opcode);
-        cycles = execute(instr);
-    }
-
-    bool tima_overflow = timer.tick(cycles);
-
-    if (tima_overflow) {
-        interrupts.request_timer_interrupt();
+        execute(instr);
     }
 
     uint16_t interrupt_loc = interrupts.check_interrupts();
     if (interrupt_loc > 0) {
         push2(pc);
+        timer.tick(12);
         pc = interrupt_loc;
-        timer.tick(5);
     }
 
     interrupts.set_ime_from_delay();
 }
 
+uint8_t CPU::read_bus(uint16_t loc) {
+    timer.tick(4);
+    return memory.read(loc);
+}
+
+void CPU::write_bus(uint16_t loc, uint8_t data) {
+    timer.tick(4);
+    memory.write(loc, data);
+}
+
 uint8_t CPU::fetch() {
-    uint8_t opcode = memory.read(pc);
+    uint8_t opcode = read_bus(pc);
     pc++;
 
     return opcode;
 }
 
 uint16_t CPU::fetch_two_bytes() {
-    uint8_t byte1 = memory.read(pc);        
+    uint8_t byte1 = read_bus(pc);        
     pc++;
 
-    uint8_t byte2 = memory.read(pc);
+    uint8_t byte2 = read_bus(pc);
     pc++;
 
     return (byte2 << 8) | byte1;
@@ -47,7 +50,7 @@ uint16_t CPU::fetch_two_bytes() {
 
 void CPU::push(uint8_t data) {
     sp--;
-    memory.write(sp, data);
+    write_bus(sp, data);
 }
 
 void CPU::push2(uint16_t data) {
@@ -55,14 +58,14 @@ void CPU::push2(uint16_t data) {
     uint8_t hi = data >> 8;
 
     sp--;
-    memory.write(sp, hi);
+    write_bus(sp, hi);
 
     sp--;
-    memory.write(sp, lo);
+    write_bus(sp, lo);
 }
 
 uint8_t CPU::pop() {
-    uint8_t data = memory.read(sp);
+    uint8_t data = read_bus(sp);
     sp++;
     return data;
 }
@@ -83,7 +86,7 @@ uint8_t CPU::read_r8(uint8_t r8) {
         case 5:
             return l ;
         case 6:
-            return memory.read(hl);
+            return read_bus(hl);
         case 7:
             return a;
     }
@@ -112,7 +115,7 @@ void CPU::write_r8(uint8_t r8, uint8_t data) {
             l = data;
             break;
         case 6:
-            memory.write(hl, data);
+            write_bus(hl, data);
             break;
         case 7:
             a = data;
@@ -191,16 +194,16 @@ void CPU::write_r16_stack(uint8_t r16, uint16_t data) {
 uint16_t CPU::read_r16_mem(uint8_t r16) {
     switch (r16) {
         case 0:
-            return memory.read(bc);
+            return read_bus(bc);
         case 1:
-            return memory.read(de);
+            return read_bus(de);
         case 2: {
-            uint16_t data = memory.read(hl);
+            uint16_t data = read_bus(hl);
             hl++;
             return data;
         }
         case 3: {
-            uint16_t data = memory.read(hl);
+            uint16_t data = read_bus(hl);
             hl--;
             return data;
         }
@@ -212,17 +215,17 @@ uint16_t CPU::read_r16_mem(uint8_t r16) {
 void CPU::write_r16_mem(uint8_t r16, uint16_t data) {
     switch (r16) {
         case 0:
-            memory.write(bc, data);
+            write_bus(bc, data);
             break;
         case 1:
-            memory.write(de, data);
+            write_bus(de, data);
             break;
         case 2:
-            memory.write(hl, data); 
+            write_bus(hl, data); 
             hl++;
             break;
         case 3:
-            memory.write(hl, data);
+            write_bus(hl, data);
             hl--;
             break;
     }

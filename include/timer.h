@@ -7,7 +7,7 @@ class Timer {
             stopped(false),
             internal_counter(0) {}
 
-        bool tick(uint8_t cycles);
+        void tick(uint8_t cycles);
         void reset_div();
 
         void enter_stop_mode();
@@ -16,13 +16,12 @@ class Timer {
         void enable_tac();
         void disable_tac();
         bool tac_enabled();
-        uint16_t tac_clock();
+        int tac_bit();
 
     private:
         Bus& memory;
         bool stopped;
         uint16_t internal_counter;
-        uint16_t tima_counter;
 
         static constexpr uint16_t DIV  = 0xFF04;
         static constexpr uint16_t TIMA = 0xFF05;

@@ -23,12 +23,6 @@ class Interrupt {
         uint8_t read_interrupt_flag();
         uint16_t interrupt_vector(uint8_t interrupt);
 
-        void request_vblank_interrupt();
-        void request_stat_interrupt();
-        void request_timer_interrupt();
-        void request_serial_interrupt();
-        void request_joypad_interrupt();
-
         void clear_vblank_interrupt();
         void clear_stat_interrupt();
         void clear_timer_interrupt();

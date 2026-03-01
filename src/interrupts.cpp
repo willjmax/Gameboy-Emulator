@@ -67,31 +67,6 @@ uint8_t Interrupt::read_interrupt_flag() {
     return memory.read(Interrupt::IF_REG);
 }
 
-void Interrupt::request_vblank_interrupt() {
-    uint8_t if_reg = memory.read(Interrupt::IF_REG);
-    memory.write(Interrupt::IF_REG, if_reg | 0x01);
-}
-
-void Interrupt::request_stat_interrupt() {
-    uint8_t if_reg = memory.read(Interrupt::IF_REG);
-    memory.write(Interrupt::IF_REG, if_reg | 0x02);
-}
-
-void Interrupt::request_timer_interrupt() {
-    uint8_t if_reg = memory.read(Interrupt::IF_REG);
-    memory.write(Interrupt::IF_REG, if_reg | 0x04);
-}
-
-void Interrupt::request_serial_interrupt() {
-    uint8_t if_reg = memory.read(Interrupt::IF_REG);
-    memory.write(Interrupt::IF_REG, if_reg | 0x08);
-}
-
-void Interrupt::request_joypad_interrupt() {
-    uint8_t if_reg = memory.read(Interrupt::IF_REG);
-    memory.write(Interrupt::IF_REG, if_reg | 0x0F);
-}
-
 void Interrupt::clear_vblank_interrupt() {
     uint8_t if_reg = memory.read(Interrupt::IF_REG);
     memory.write(Interrupt::IF_REG, if_reg & ~0x01);

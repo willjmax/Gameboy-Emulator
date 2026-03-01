@@ -11,6 +11,14 @@ class Bus {
 
         void update_div(uint8_t div);
 
+        // request interrupts
+        void request_vblank_interrupt();
+        void request_stat_interrupt();
+        void request_timer_interrupt();
+        void request_serial_interrupt();
+        void request_joypad_interrupt();
+
+
     private:
         uint8_t memory[0xFFFF];
 
