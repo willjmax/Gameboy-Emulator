@@ -59,10 +59,14 @@ bool Timer::tac_enabled() {
 uint16_t Timer::tac_clock() {
 
     switch (memory.read(Timer::TAC) & 0x03) {
-        case 0b00: return 256;
-        case 0b01: return 4;
-        case 0b10: return 16;
-        case 0b11: return 64;
+        case 0b00: return 1028;
+        case 0b01: return 16;
+        case 0b10: return 64;
+        case 0b11: return 256;
+        //case 0b00: return 256;
+        //case 0b01: return 4;
+        //case 0b10: return 16;
+        //case 0b11: return 64;
         default: 
             throw std::runtime_error("tac_clock: impossible value");
     }

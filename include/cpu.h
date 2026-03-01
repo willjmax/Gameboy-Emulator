@@ -41,6 +41,10 @@ class CPU {
         uint8_t fetch();
         uint16_t fetch_two_bytes();
 
+        // bus operations
+        uint8_t read_bus(uint16_t loc);
+        void write_bus(uint16_t loc, uint8_t data);
+
         // stack ops
         void push(uint8_t data);
         void push2(uint16_t data);
