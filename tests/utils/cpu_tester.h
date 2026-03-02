@@ -12,7 +12,7 @@ class CPUTester {
     public:
         CPUTester() :
             interrupt(), timer(interrupt),
-            bus(timer, interrupt),
+            apu(), bus(timer, interrupt, apu),
             cpu(bus, timer, interrupt) {};
 
         void setup_sm83(json initial);
@@ -40,6 +40,7 @@ class CPUTester {
     private:
         Interrupt interrupt;
         Timer timer;
+        APU apu;
         Bus bus;
         CPU cpu;
 

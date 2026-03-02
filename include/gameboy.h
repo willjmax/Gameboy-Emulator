@@ -11,7 +11,8 @@ class GameBoy {
         GameBoy() :
             interrupt(),
             timer(interrupt),
-            bus(timer, interrupt),
+            apu(),
+            bus(timer, interrupt, apu),
             cpu(bus, timer, interrupt),
             running(false) {};
 
@@ -21,6 +22,7 @@ class GameBoy {
     private:
         Interrupt interrupt;
         Timer timer;
+        APU apu;
         Bus bus;
         CPU cpu;
 
