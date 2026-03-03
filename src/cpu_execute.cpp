@@ -730,12 +730,10 @@ void CPU::execute_block_11(Instruction instr) {
             case 0b010: {
                 uint8_t data = instr.range(4, 3);
                 uint16_t loc = fetch_two_bytes();
-
-
+                
                 if (cond(data)) {
                     bus.tick(4);
                     pc = loc;
-                    return;
                 }
 
                 return;
@@ -905,7 +903,7 @@ void CPU::execute_cb(Instruction instr) {
         // BIT b3,r8
         case 0b01: {
             uint8_t is_set = (data >> b3) & 0x01;
-
+            
             setZ(is_set == 0);
             setN(0);
             setH(1);

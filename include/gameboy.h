@@ -12,7 +12,8 @@ class GameBoy {
             interrupt(),
             timer(interrupt),
             apu(),
-            bus(timer, interrupt, apu),
+            ppu(),
+            bus(timer, interrupt, apu, ppu),
             cpu(bus, timer, interrupt),
             running(false) {};
 
@@ -23,6 +24,7 @@ class GameBoy {
         Interrupt interrupt;
         Timer timer;
         APU apu;
+        PPU ppu;
         Bus bus;
         CPU cpu;
 
