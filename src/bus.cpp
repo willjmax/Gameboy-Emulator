@@ -11,6 +11,18 @@ uint8_t Bus::read(uint16_t loc) {
         return apu.read(loc);
     }
 
+    if (loc >= VRAM_START && loc <= VRAM_END) {
+        return ppu.read_vram(loc);
+    }
+
+    if (loc >= OAM_START && loc <= OAM_END) {
+        return ppu.read_oam(loc);
+    }
+
+    if (loc >= PPU_START && loc <= PPU_END) {
+        return ppu.read_register(loc);
+    }
+
     switch (loc) {
 
         // timer
@@ -40,6 +52,21 @@ void Bus::write(uint16_t loc, uint8_t byte) {
 
     if (loc >= APU_START && loc <= APU_END) {
         apu.write(loc, byte);
+        return;
+    }
+
+    if (loc >= VRAM_START && loc <= VRAM_END) {
+        ppu.write_vram(loc, byte);
+        return;
+    }
+
+    if (loc >= OAM_START && loc <= OAM_END) {
+        ppu.write_oam(loc, byte);
+        return;
+    }
+
+    if (loc >= PPU_START && loc <= PPU_END) {
+        ppu.write_register(loc, byte);
         return;
     }
 
@@ -86,4 +113,5 @@ void Bus::loadROM(std::ifstream& file, uintmax_t size) {
 void Bus::tick(int cycles) {
     timer.tick(cycles);
     apu.tick(cycles);
+    ppu.tick(cycles);
 }

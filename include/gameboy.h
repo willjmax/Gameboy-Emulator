@@ -5,7 +5,7 @@
 #include "cpu.h"
 #include "interrupt.h"
 #include "timer.h"
-#include "screen.h"
+#include "display.h"
 
 class GameBoy {
     public:
@@ -13,10 +13,10 @@ class GameBoy {
             interrupt(),
             timer(interrupt),
             apu(),
-            ppu(),
+            ppu(interrupt),
             bus(timer, interrupt, apu, ppu),
             cpu(bus, timer, interrupt),
-            screen(),
+            display(),
             running(false) {};
 
         void loadROM(std::string path);
@@ -29,7 +29,7 @@ class GameBoy {
         PPU ppu;
         Bus bus;
         CPU cpu;
-        Screen screen;
+        Display display;
 
         bool running;
 };

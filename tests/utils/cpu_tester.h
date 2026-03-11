@@ -12,7 +12,7 @@ class CPUTester {
     public:
         CPUTester() :
             interrupt(), timer(interrupt),
-            apu(), ppu(),
+            apu(), ppu(interrupt),
             bus(timer, interrupt, apu, ppu),
             cpu(bus, timer, interrupt) {};
 

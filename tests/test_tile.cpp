@@ -1,7 +1,7 @@
 #include <array>
 #include <catch2/catch_test_macros.hpp>
 
-#include "ppu_utils/tile.h"
+#include "ppu/tile.h"
 
 TEST_CASE("TILE", "[ppu]") {
     std::array<uint8_t, 16> bytes = { 

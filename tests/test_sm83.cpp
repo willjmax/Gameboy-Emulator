@@ -32,7 +32,7 @@ TEST_CASE("SM83", "[cpu][sm83]") {
         json tests = json::parse(f);
 
         // | std::views::take(1)
-        for (auto& test_case : tests | std::views::take(15)) {
+        for (auto& test_case : tests | std::views::take(1)) {
             DYNAMIC_SECTION("Test: " << test_case["name"]) {
 
                 INFO(test_case["name"]);

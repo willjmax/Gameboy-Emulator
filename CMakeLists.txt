@@ -19,6 +19,8 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(json)
 
+find_package(SDL3 REQUIRED)
+
 
 file(GLOB_RECURSE ALL_CORE_SOURCES "src/*.cpp")
 
@@ -34,7 +36,7 @@ target_include_directories(EmulatorCore PUBLIC include)
 
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp")
     add_executable(GeminiBoy src/main.cpp)
-    target_link_libraries(GeminiBoy PRIVATE EmulatorCore)
+    target_link_libraries(GeminiBoy PRIVATE EmulatorCore SDL3::SDL3)
 else()
     message(FATAL_ERROR "Could not find src/main.cpp! Please check your file structure.")
 endif()
