@@ -27,7 +27,9 @@ void Display::update(std::array<uint8_t, WIDTH*HEIGHT> ppu_framebuffer) {
         pixels[i] = palette[ppu_framebuffer[i]];
     }
 
-    SDL_UpdateTexture(texture, NULL, pixels, 64 * sizeof(uint32_t));
+    int pitch = WIDTH * sizeof(uint32_t);
+
+    SDL_UpdateTexture(texture, NULL, pixels, pitch);
     SDL_RenderClear(renderer);
     SDL_RenderTexture(renderer, texture, nullptr, nullptr);
     SDL_RenderPresent(renderer);

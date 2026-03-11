@@ -162,10 +162,10 @@ void PPU::mode_3_drawing() {
     }
 
     if (x_coord == 160) {
-        std::cout << dots-80 << std::endl;
         fetcher.reset();
         mode = PPU_Mode::HBLANK;
     }
+
 }
 
 void PPU::write_to_framebuffer(int x, int y, uint8_t pixel) {
