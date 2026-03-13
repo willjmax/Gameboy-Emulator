@@ -7,6 +7,7 @@ class Display {
         ~Display();
 
         void update(std::array<uint8_t, 160*144> ppu_framebuffer);
+        void draw_debug_grid(SDL_Renderer* renderer);
 
     private:
 

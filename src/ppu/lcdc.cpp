@@ -4,36 +4,36 @@ bool PPU:: lcd_ppu_enabled() {
     return (registers[LCDC] & 128) == 128;
 }
 
-MemRange PPU::window_tile_map_area() {
+uint16_t PPU::window_tile_map_area() {
     if ((registers[LCDC] & 64) == 0) {
-        return {MAP_AREA_0_START, MAP_AREA_0_END};
+        return MAP_AREA_0_START;
     }
 
-    return {MAP_AREA_1_START, MAP_AREA_1_END};
+    return MAP_AREA_1_START;
 }
 
 bool PPU::window_enabled() {
     return (registers[LCDC] & 32) == 32;
 }
 
-MemRange PPU::tile_data_area() {
+uint16_t PPU::tile_data_area() {
     if ((registers[LCDC] & 16) == 0) {
-        return {DATA_AREA_0_START, DATA_AREA_0_END};
+        return DATA_AREA_0_START;
     }
 
-    return {DATA_AREA_1_START, DATA_AREA_1_END};
+    return DATA_AREA_1_START;
 }
 
 bool PPU::signed_mode() {
     return (registers[LCDC] & 16) == 0;
 }
 
-MemRange PPU::bg_tile_map_area() {
+uint16_t PPU::bg_tile_map_area() {
     if ((registers[LCDC] & 8) == 0) {
-        return {MAP_AREA_0_START, MAP_AREA_0_END};
+        return MAP_AREA_0_START;
     }
 
-    return {MAP_AREA_1_START, MAP_AREA_1_END};
+    return MAP_AREA_1_START;
 }
 
 std::pair<int, int> PPU::obj_size() {

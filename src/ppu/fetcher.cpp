@@ -1,6 +1,8 @@
 #include "ppu/fetcher.h"
 #include "ppu/ppu.h"
 
+#include <iostream>
+
 void PixelFetcher::tick() {
     ticks++;
     if (ticks < 2) {
@@ -26,26 +28,40 @@ void PixelFetcher::tick() {
 }
 
 void PixelFetcher::read_tile_id() {
-    uint16_t map_addr = ppu->bg_tile_map_area().first;
-    uint16_t offset = (ppu->registers[PPU::LY]/8 * 32);
+    uint16_t map_addr = ppu->bg_tile_map_area();
+    uint16_t tile_x = (tile_index + (ppu->registers[PPU::SCX]/8)) & 0x1F;
+    uint16_t tile_y = (ppu->registers[PPU::LY] + ppu->registers[PPU::SCY])/8 & 0x1F;
+    uint16_t offset = tile_x + tile_y*32;
 
-    tile_id = ppu->read_vram(map_addr + offset + tile_index);
+    tile_id = ppu->read_vram(map_addr + offset);
     state = FetcherState::READ_FIRST_BYTE;
 }
 
 void PixelFetcher::read_first_byte() {
-    uint16_t data_addr = ppu->tile_data_area().first;
-    uint16_t tile_line = ppu->registers[PPU::LY] % 8;
-    uint16_t addr = data_addr + (tile_line * 2) + (tile_id * 16);
+    uint16_t tile_line = (ppu->registers[PPU::LY] + ppu->registers[PPU::SCY]) % 8;
+    uint16_t addr;
+
+    if (ppu->signed_mode()) {
+        int8_t signed_id = static_cast<int8_t>(tile_id);
+        addr = PPU::DATA_AREA_0_START + tile_line*2 + signed_id*16;
+    } else {
+        addr = PPU::DATA_AREA_1_START + tile_line*2 + tile_id*16;
+    }
 
     byte1 = ppu->read_vram(addr);
     state = FetcherState::READ_SECOND_BYTE;
 }
 
 void PixelFetcher::read_second_byte() {
-    uint16_t data_addr = ppu->tile_data_area().first;
-    uint16_t tile_line = ppu->registers[PPU::LY] % 8;
-    uint16_t addr = data_addr + (tile_line * 2) + (tile_id * 16);
+    uint16_t tile_line = (ppu->registers[PPU::LY] + ppu->registers[PPU::SCY]) % 8;
+    uint16_t addr;
+
+    if (ppu->signed_mode()) {
+        int8_t signed_id = static_cast<int8_t>(tile_id);
+        addr = PPU::DATA_AREA_0_START + tile_line*2 + signed_id*16;
+    } else {
+        addr = PPU::DATA_AREA_1_START + tile_line*2 + tile_id*16;
+    }
 
     byte2 = ppu->read_vram(addr+1);
 
@@ -80,13 +96,14 @@ void PixelFetcher::push_to_fifo() {
 
 void PixelFetcher::reset() {
     state = FetcherState::READ_TILE_ID;
-    tile_index = 0;
     ticks = 0;
     delay = true;
+    tile_index = 0;
+    FIFO.clear();
 }
 
 uint8_t PixelFetcher::fetch() {
-        return FIFO.pop();
+    return FIFO.pop();
 }
 
 bool PixelFetcher::has_pixels() {

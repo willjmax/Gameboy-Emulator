@@ -31,11 +31,6 @@ void PPU::write_reg_default(uint16_t loc, uint8_t data) {
 }
 
 uint8_t PPU::read_vram(uint16_t loc) {
-
-    if (vram_blocked) {
-        return 0xFF;
-    }
-
     return vram[loc];
 }
 
@@ -147,6 +142,7 @@ void PPU::mode_1_vblank() {
 void PPU::mode_2_oam_scan() {
     if (dots == 80) {
         x_coord = 0;
+        scx_cnt = 0;
         mode = PPU_Mode::DRAWING;
     }
 }
@@ -156,9 +152,14 @@ void PPU::mode_3_drawing() {
     fetcher.tick();
 
     if (fetcher.has_pixels()) {
-        uint8_t pixel = fetcher.fetch();
-        write_to_framebuffer(x_coord, registers[LY], pixel);
-        x_coord++;
+        if (scx_cnt < registers[SCX] % 8) {
+            fetcher.fetch();
+            scx_cnt++;
+        } else {
+            uint8_t pixel = fetcher.fetch();
+            write_to_framebuffer(x_coord, registers[LY], pixel);
+            x_coord++;
+        }
     }
 
     if (x_coord == 160) {

@@ -34,3 +34,18 @@ void Display::update(std::array<uint8_t, WIDTH*HEIGHT> ppu_framebuffer) {
     SDL_RenderTexture(renderer, texture, nullptr, nullptr);
     SDL_RenderPresent(renderer);
 }
+
+void Display::draw_debug_grid(SDL_Renderer* renderer) {
+    SDL_SetRenderDrawColor(renderer, 200, 200, 200, 100);
+    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+
+    for (int x = 0; x <= 160; x += 8) {
+        float x_pos = (float)(x * SCALE);
+        SDL_RenderLine(renderer, x_pos, 0.0f, x_pos, (float)(144 * SCALE));
+    }
+
+    for (int y = 0; y <= 144; y += 8) {
+        float y_pos = (float)(y * SCALE);
+        SDL_RenderLine(renderer, 0.0f, y_pos, (float)(160 * SCALE), y_pos);
+    }
+}
