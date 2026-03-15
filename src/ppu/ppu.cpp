@@ -1,5 +1,4 @@
 #include "ppu/ppu.h"
-#include <iostream>
 
 PPU::PPU(Interrupt& i) : 
     interrupt(i), fetcher(this) {
@@ -69,6 +68,7 @@ void PPU::inc_LY() {
 
 void PPU::reset_LY() {
     registers[LY] = 0;
+    fetcher.reset_window();
     compare();
 }
 
@@ -156,14 +156,31 @@ void PPU::mode_3_drawing() {
             fetcher.fetch();
             scx_cnt++;
         } else {
-            uint8_t pixel = fetcher.fetch();
+            uint8_t pixel;
+
+            if (bg_window_enabled()) {
+                pixel = fetcher.fetch();
+            } else {
+                pixel = 0x00;
+                fetcher.fetch();
+            }
+
             write_to_framebuffer(x_coord, registers[LY], pixel);
             x_coord++;
         }
     }
 
+    if (window_enabled() &&
+        fetcher.fetcher_mode() == FetcherMode::BACKGROUND &&
+        registers[PPU::LY] >= registers[PPU::WY] &&
+        x_coord >= registers[PPU::WX] - 7) 
+    {
+        fetcher.reset(FetcherMode::WINDOW);
+        fetcher.inc_window();
+    }
+
     if (x_coord == 160) {
-        fetcher.reset();
+        fetcher.reset(FetcherMode::BACKGROUND);
         mode = PPU_Mode::HBLANK;
     }
 

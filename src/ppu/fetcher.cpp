@@ -1,8 +1,6 @@
 #include "ppu/fetcher.h"
 #include "ppu/ppu.h"
 
-#include <iostream>
-
 void PixelFetcher::tick() {
     ticks++;
     if (ticks < 2) {
@@ -28,11 +26,25 @@ void PixelFetcher::tick() {
 }
 
 void PixelFetcher::read_tile_id() {
-    uint16_t map_addr = ppu->bg_tile_map_area();
-    uint16_t tile_x = (tile_index + (ppu->registers[PPU::SCX]/8)) & 0x1F;
-    uint16_t tile_y = (ppu->registers[PPU::LY] + ppu->registers[PPU::SCY])/8 & 0x1F;
-    uint16_t offset = tile_x + tile_y*32;
+    uint16_t map_addr;
+    uint16_t tile_x;
+    uint16_t tile_y;
+    uint16_t offset;
 
+    switch (mode) {
+        case FetcherMode::BACKGROUND:
+            map_addr = ppu->bg_tile_map_area();
+            tile_x = (tile_index + (ppu->registers[PPU::SCX]/8)) & 0x1F;
+            tile_y = (ppu->registers[PPU::LY] + ppu->registers[PPU::SCY])/8 & 0x1F;
+            break;
+        case FetcherMode::WINDOW:
+            map_addr = ppu->window_tile_map_area();
+            tile_x = tile_index;
+            tile_y = window_count/8;
+            break;
+    }
+
+    offset = tile_x + tile_y*32;
     tile_id = ppu->read_vram(map_addr + offset);
     state = FetcherState::READ_FIRST_BYTE;
 }
@@ -94,11 +106,12 @@ void PixelFetcher::push_to_fifo() {
     state = FetcherState::READ_TILE_ID;
 }
 
-void PixelFetcher::reset() {
+void PixelFetcher::reset(FetcherMode f_mode) {
     state = FetcherState::READ_TILE_ID;
+    tile_index = 0;
+    mode = f_mode;
     ticks = 0;
     delay = true;
-    tile_index = 0;
     FIFO.clear();
 }
 
@@ -108,4 +121,18 @@ uint8_t PixelFetcher::fetch() {
 
 bool PixelFetcher::has_pixels() {
     return FIFO.size() > 0;
+}
+
+FetcherMode PixelFetcher::fetcher_mode() {
+    return mode;
+}
+
+void PixelFetcher::inc_window() {
+    if (mode == FetcherMode::WINDOW) {
+        window_count++;
+    }
+}
+
+void PixelFetcher::reset_window() {
+    window_count = -1;
 }

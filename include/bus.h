@@ -40,7 +40,7 @@ class Bus {
         static constexpr uint16_t OAM_START  = 0xFE00;
         static constexpr uint16_t OAM_END    = 0xFE9F;
         static constexpr uint16_t PPU_START  = 0xFF40;
-        static constexpr uint16_t PPU_END    = 0xFF49;
+        static constexpr uint16_t PPU_END    = 0xFF4B;
 
         // Timer addresses
         static constexpr uint16_t DIV  = 0xFF04;
