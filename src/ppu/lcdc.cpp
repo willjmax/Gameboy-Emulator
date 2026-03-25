@@ -36,12 +36,12 @@ uint16_t PPU::bg_tile_map_area() {
     return MAP_AREA_1_START;
 }
 
-std::pair<int, int> PPU::obj_size() {
+int PPU::obj_size() {
     if ((registers[LCDC] & 4) == 0) {
-        return {8, 8};
+        return 8;
     }
 
-    return {8, 16};
+    return 16;
 }
 
 bool PPU::obj_enable() {
