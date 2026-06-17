@@ -1,3 +1,4 @@
+#include <stdexcept>
 #include "ppu/fetcher.h"
 #include "ppu/ppu.h"
 
@@ -9,21 +10,26 @@ void PixelFetcher::tick() {
 
     ticks = 0;
 
-    switch (state) {
-        case FetcherState::READ_TILE_ID:
+    if (mode == FetcherMode::OBJECT) {
+    }
+
+    switch (bg_state) {
+        case BG_State::READ_TILE_ID:
             read_tile_id();
             break;
-        case FetcherState::READ_FIRST_BYTE:
+        case BG_State::READ_FIRST_BYTE:
             read_first_byte();
             break;
-        case FetcherState::READ_SECOND_BYTE:
+        case BG_State::READ_SECOND_BYTE:
             read_second_byte();
             break;
-        case FetcherState::PUSH_TO_FIFO:
+        case BG_State::PUSH_TO_FIFO:
             push_to_fifo();
             break;
     }
 }
+
+// bg/window mode
 
 void PixelFetcher::read_tile_id() {
     uint16_t map_addr;
@@ -42,11 +48,13 @@ void PixelFetcher::read_tile_id() {
             tile_x = tile_index;
             tile_y = window_count/8;
             break;
+        case FetcherMode::OBJECT:
+            throw std::runtime_error("Bad state: FetcherMode::OBJECT");
     }
 
     offset = tile_x + tile_y*32;
     tile_id = ppu->read_vram(map_addr + offset);
-    state = FetcherState::READ_FIRST_BYTE;
+    bg_state = BG_State::READ_FIRST_BYTE;
 }
 
 void PixelFetcher::read_first_byte() {
@@ -61,7 +69,7 @@ void PixelFetcher::read_first_byte() {
     }
 
     byte1 = ppu->read_vram(addr);
-    state = FetcherState::READ_SECOND_BYTE;
+    bg_state = BG_State::READ_SECOND_BYTE;
 }
 
 void PixelFetcher::read_second_byte() {
@@ -79,15 +87,15 @@ void PixelFetcher::read_second_byte() {
 
     if (delay) {
         delay = false;
-        state = FetcherState::READ_TILE_ID;
+        bg_state = BG_State::READ_TILE_ID;
     } else {
-        state = FetcherState::PUSH_TO_FIFO;
+        bg_state = BG_State::PUSH_TO_FIFO;
     }
 }
 
 void PixelFetcher::push_to_fifo() {
 
-    if (FIFO.size() > 8) {
+    if (BG_FIFO.size() > 8) {
         return;
     }
 
@@ -99,28 +107,43 @@ void PixelFetcher::push_to_fifo() {
         high = (byte2 >> (7 - j)) & 0x01;
 
         pixel = (high << 1) | low; 
-        FIFO.push(pixel);
+        BG_FIFO.push(pixel);
     }
 
     tile_index++;
-    state = FetcherState::READ_TILE_ID;
+    bg_state = BG_State::READ_TILE_ID;
 }
 
 void PixelFetcher::reset(FetcherMode f_mode) {
-    state = FetcherState::READ_TILE_ID;
+    bg_state = BG_State::READ_TILE_ID;
     tile_index = 0;
     mode = f_mode;
     ticks = 0;
     delay = true;
-    FIFO.clear();
+    BG_FIFO.clear();
 }
 
-uint8_t PixelFetcher::fetch() {
-    return FIFO.pop();
+// object mode
+
+void PixelFetcher::get_sprite_tile() {
+    obj_state = OBJ_State::GET_SPRITE_LOW;
 }
 
-bool PixelFetcher::has_pixels() {
-    return FIFO.size() > 0;
+void PixelFetcher::get_sprite_low() {
+    obj_state = OBJ_State::GET_SPRITE_HIGH;
+}
+
+void PixelFetcher::merge_fifo() {
+    obj_state = OBJ_State::GET_SPRITE_TILE;
+    mode = FetcherMode::BACKGROUND;
+}
+
+uint8_t PixelFetcher::select() {
+    return BG_FIFO.pop();
+}
+
+bool PixelFetcher::has_bg_pixels() {
+    return BG_FIFO.size() > 0;
 }
 
 FetcherMode PixelFetcher::fetcher_mode() {
@@ -136,3 +159,4 @@ void PixelFetcher::inc_window() {
 void PixelFetcher::reset_window() {
     window_count = -1;
 }
+

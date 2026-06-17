@@ -1,4 +1,5 @@
 #include "ppu/ppu.h"
+#include <iostream>
 
 PPU::PPU(Interrupt& i) : 
     interrupt(i), fetcher(this) {
@@ -113,56 +114,77 @@ void PPU::tick(uint8_t cycles) {
 }
 
 void PPU::mode_0_hblank() {
-    if (dots == 456) {
-        dots = 0;
-        inc_LY();
-        if (registers[LY] == 144) {
-            interrupt.request_vblank_interrupt();
-            frame_ready = true;
-            mode = PPU_Mode::VBLANK;
-        } else {
-            mode = PPU_Mode::OAM_SCAN;
-        }
+    if (dots < 456) {
+        return;
+    }
+
+    dots = 0;
+    inc_LY();
+    if (registers[LY] == 144) {
+        interrupt.request_vblank_interrupt();
+        frame_ready = true;
+        mode = PPU_Mode::VBLANK;
+    } else {
+        mode = PPU_Mode::OAM_SCAN;
     }
 
 }
 
 void PPU::mode_1_vblank() {
-    if (dots == 456) {
-        dots = 0;
-        if (registers[LY] == 153) {
-            reset_LY();
-            mode = PPU_Mode::OAM_SCAN;
-        } else {
-            inc_LY();
-        }
+    if (dots < 456) {
+        return;
+    }
+
+    dots = 0;
+    if (registers[LY] == 153) {
+        reset_LY();
+        mode = PPU_Mode::OAM_SCAN;
+    } else {
+        inc_LY();
     }
 }
 
 void PPU::mode_2_oam_scan() {
-    if (dots == 80) {
-        x_coord = 0;
-        scx_cnt = 0;
-        mode = PPU_Mode::DRAWING;
+    if (dots < 80) {
+        return;
     }
+
+    int found = 0;
+    for (uint16_t offset = 0; offset < 160; offset += 4) {
+        Sprite sprite = fetch_sprite(offset);
+        int size = obj_size();
+
+        if (sprite.on_scanline(registers[PPU::LY], size)){
+            sprite_buffer.push(sprite);
+            found++;
+        }
+
+        if (found == 10) {
+            break;
+        }
+    }
+
+    x_coord = 0;
+    scx_cnt = 0;
+    mode = PPU_Mode::DRAWING;
 }
 
 void PPU::mode_3_drawing() {
-
     fetcher.tick();
 
-    if (fetcher.has_pixels()) {
+    // this if block will become fetcher.select()
+    if (fetcher.has_bg_pixels()) {
         if (scx_cnt < registers[SCX] % 8) {
-            fetcher.fetch();
+            fetcher.select();
             scx_cnt++;
         } else {
             uint8_t pixel;
 
             if (bg_window_enabled()) {
-                pixel = fetcher.fetch();
+                pixel = fetcher.select();
             } else {
                 pixel = 0x00;
-                fetcher.fetch();
+                fetcher.select();
             }
 
             write_to_framebuffer(x_coord, registers[LY], pixel);
@@ -183,7 +205,6 @@ void PPU::mode_3_drawing() {
         fetcher.reset(FetcherMode::BACKGROUND);
         mode = PPU_Mode::HBLANK;
     }
-
 }
 
 void PPU::write_to_framebuffer(int x, int y, uint8_t pixel) {
@@ -200,4 +221,13 @@ void PPU::compare() {
     if (registers[LY] == registers[LYC]) {
         interrupt.request_stat_interrupt();
     }
+}
+
+Sprite PPU::fetch_sprite(uint16_t offset) {
+    uint8_t y_pos = oam[offset+0];
+    uint8_t x_pos = oam[offset+1];
+    uint8_t index = oam[offset+2];
+    uint8_t attrs = oam[offset+3];
+
+    return Sprite(y_pos, x_pos, index, attrs);
 }
