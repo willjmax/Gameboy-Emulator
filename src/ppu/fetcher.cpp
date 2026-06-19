@@ -1,6 +1,9 @@
+#include <optional>
 #include <stdexcept>
 #include "ppu/fetcher.h"
 #include "ppu/ppu.h"
+
+#include <iostream>
 
 void PixelFetcher::tick() {
     ticks++;
@@ -138,8 +141,23 @@ void PixelFetcher::merge_fifo() {
     mode = FetcherMode::BACKGROUND;
 }
 
-uint8_t PixelFetcher::select() {
-    return BG_FIFO.pop();
+std::optional<uint8_t> PixelFetcher::select() {
+    if (has_bg_pixels()) {
+        uint8_t pixel = BG_FIFO.pop();
+
+        if (ppu->scx_cnt < ppu->registers[PPU::SCX] % 8) {
+            ppu->scx_cnt++;
+            return std::nullopt;
+        }
+
+        if (ppu->bg_window_enabled()) {
+            return pixel;
+        }
+
+        return 0x00;
+    }
+
+    return std::nullopt;
 }
 
 bool PixelFetcher::has_bg_pixels() {

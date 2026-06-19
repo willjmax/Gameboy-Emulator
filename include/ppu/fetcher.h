@@ -1,5 +1,6 @@
 #pragma once
 #include <cstdint>
+#include <optional>
 
 class PPU;
 
@@ -58,7 +59,7 @@ class PixelFetcher {
 
         void reset(FetcherMode f_mode);
         void tick();
-        uint8_t select();
+        std::optional<uint8_t> select();
         bool has_bg_pixels();
         FetcherMode fetcher_mode();
 

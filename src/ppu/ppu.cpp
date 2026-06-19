@@ -1,5 +1,4 @@
 #include "ppu/ppu.h"
-#include <iostream>
 
 PPU::PPU(Interrupt& i) : 
     interrupt(i), fetcher(this) {
@@ -172,24 +171,10 @@ void PPU::mode_2_oam_scan() {
 void PPU::mode_3_drawing() {
     fetcher.tick();
 
-    // this if block will become fetcher.select()
-    if (fetcher.has_bg_pixels()) {
-        if (scx_cnt < registers[SCX] % 8) {
-            fetcher.select();
-            scx_cnt++;
-        } else {
-            uint8_t pixel;
-
-            if (bg_window_enabled()) {
-                pixel = fetcher.select();
-            } else {
-                pixel = 0x00;
-                fetcher.select();
-            }
-
-            write_to_framebuffer(x_coord, registers[LY], pixel);
-            x_coord++;
-        }
+    auto pixel = fetcher.select();
+    if (pixel.has_value()) {
+        write_to_framebuffer(x_coord, registers[LY], pixel.value());
+        x_coord++;
     }
 
     if (window_enabled() &&
