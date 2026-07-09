@@ -32,6 +32,8 @@ void Display::update(std::array<uint8_t, WIDTH*HEIGHT> ppu_framebuffer) {
     SDL_UpdateTexture(texture, NULL, pixels, pitch);
     SDL_RenderClear(renderer);
     SDL_RenderTexture(renderer, texture, nullptr, nullptr);
+
+    draw_debug_grid(renderer, 8);
     SDL_RenderPresent(renderer);
 }
 

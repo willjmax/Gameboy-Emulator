@@ -2,11 +2,18 @@
 #include <cstdint>
 #include <optional>
 
+#include "ppu/oam.h"
+
 class PPU;
+
+struct Pixel {
+    uint8_t color_id;
+    bool priority;
+};
 
 class PixelFIFO {
     public:
-        void push(uint8_t pixel) {
+        void push(Pixel pixel) {
             if (count < 16) {
                 buffer[tail] = pixel;
                 tail = (tail + 1) % 16;
@@ -14,19 +21,24 @@ class PixelFIFO {
             }
         }
 
-        uint8_t pop() {
-            if (count == 0) return 0;
-            uint8_t pixel = buffer[head];
+        std::optional<Pixel> pop() {
+            if (count == 0) return std::nullopt;
+            Pixel pixel = buffer[head];
             head = (head + 1) % 16;
             count--;
             return pixel;
+        }
+
+        std::optional<Pixel> peak() {
+            if (count == 0) return std::nullopt;
+            return buffer[head];
         }
 
         void clear() { head = 0; tail = 0; count = 0;}
         uint8_t size() const { return count; }
 
     private:
-        uint8_t buffer[16];
+        Pixel buffer[16];
         uint8_t head = 0;
         uint8_t tail = 0;
         uint8_t count = 0;
@@ -59,12 +71,12 @@ class PixelFetcher {
 
         void reset(FetcherMode f_mode);
         void tick();
-        std::optional<uint8_t> select();
-        bool has_bg_pixels();
+        std::optional<Pixel> select();
         FetcherMode fetcher_mode();
 
         void inc_window();
         void reset_window();
+        void request_obj_mode(Sprite* sprite);
 
     private:
         FetcherMode mode = FetcherMode::BACKGROUND;
@@ -92,4 +104,7 @@ class PixelFetcher {
         void get_sprite_low();
         void get_sprite_high();
         void merge_fifo();
+        FetcherMode prev_mode;
+        bool obj_requested;
+        Sprite* oam_sprite;
 };

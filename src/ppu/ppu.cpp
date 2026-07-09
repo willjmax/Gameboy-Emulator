@@ -1,4 +1,5 @@
 #include "ppu/ppu.h"
+#include <iostream>
 
 PPU::PPU(Interrupt& i) : 
     interrupt(i), fetcher(this) {
@@ -148,17 +149,19 @@ void PPU::mode_2_oam_scan() {
         return;
     }
 
-    int found = 0;
+    sprite_buffer.clear();
+
     for (uint16_t offset = 0; offset < 160; offset += 4) {
         Sprite sprite = fetch_sprite(offset);
         int size = obj_size();
 
         if (sprite.on_scanline(registers[PPU::LY], size)){
-            sprite_buffer.push(sprite);
-            found++;
+            sprite_buffer.push_back(sprite);
         }
 
-        if (found == 10) {
+        std::cout << sprite_buffer.size() << std::endl;
+
+        if (sprite_buffer.size() == 10) {
             break;
         }
     }
@@ -169,11 +172,17 @@ void PPU::mode_2_oam_scan() {
 }
 
 void PPU::mode_3_drawing() {
+    auto sprite = sprite_on_column();
+
+    if (sprite.has_value()) {
+        fetcher.request_obj_mode(&sprite.value());
+    }
+
     fetcher.tick();
 
     auto pixel = fetcher.select();
     if (pixel.has_value()) {
-        write_to_framebuffer(x_coord, registers[LY], pixel.value());
+        write_to_framebuffer(x_coord, registers[LY], pixel.value().color_id);
         x_coord++;
     }
 
@@ -215,4 +224,15 @@ Sprite PPU::fetch_sprite(uint16_t offset) {
     uint8_t attrs = oam[offset+3];
 
     return Sprite(y_pos, x_pos, index, attrs);
+}
+
+std::optional<Sprite> PPU::sprite_on_column() {
+    for (int i = 0; i < (int)sprite_buffer.size(); i++) {
+        Sprite sprite = sprite_buffer[i];
+        if (sprite.x_pos() == x_coord + 8) {
+            return sprite; 
+        }
+    }
+
+    return std::nullopt;
 }

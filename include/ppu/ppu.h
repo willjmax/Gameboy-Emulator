@@ -1,6 +1,6 @@
 #include <array>
 #include <cstdint>
-#include <queue>
+#include <vector>
 #include "interrupt.h"
 #include "ppu/fetcher.h"
 #include "ppu/oam.h"
@@ -64,7 +64,7 @@ class PPU {
         friend class PixelFetcher;
 
         PixelFetcher fetcher;
-        std::queue<Sprite> sprite_buffer;
+        std::vector<Sprite> sprite_buffer;
         Sprite fetch_sprite(uint16_t offset);
 
         using ReadHandler = uint8_t (PPU::*)(uint16_t);
@@ -106,6 +106,8 @@ class PPU {
         void mode_1_vblank(); 
         void mode_2_oam_scan();
         void mode_3_drawing();
+
+        std::optional<Sprite> sprite_on_column();
 
     public:
         PPU(Interrupt& i);
