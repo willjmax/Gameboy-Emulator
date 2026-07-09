@@ -210,6 +210,10 @@ std::optional<Pixel> PixelFetcher::select() {
     auto bg_pixel = BG_FIFO.pop();
     auto obj_pixel = OBJ_FIFO.pop();
 
+    if (!ppu->bg_window_enabled() && bg_pixel.has_value()) {
+        bg_pixel.value().color_id = 0x00;
+    }
+
     if (ppu->scx_cnt < ppu->registers[PPU::SCX] % 8) {
         ppu->scx_cnt++;
         return std::nullopt;

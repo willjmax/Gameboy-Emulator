@@ -1,5 +1,4 @@
 #include "ppu/ppu.h"
-#include <iostream>
 
 PPU::PPU(Interrupt& i) : 
     interrupt(i), fetcher(this) {
@@ -158,8 +157,6 @@ void PPU::mode_2_oam_scan() {
         if (sprite.on_scanline(registers[PPU::LY], size)){
             sprite_buffer.push_back(sprite);
         }
-
-        std::cout << sprite_buffer.size() << std::endl;
 
         if (sprite_buffer.size() == 10) {
             break;
