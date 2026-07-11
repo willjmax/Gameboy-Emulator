@@ -115,7 +115,6 @@ void PPU::mode_3_drawing() {
 
     auto pixel = fetcher.select();
     if (pixel.has_value()) {
-        std::cout << static_cast<int>(read_register(PPU_REG::LY)) << std::endl;
         write_to_framebuffer(x_coord, read_register(PPU_REG::LY), pixel.value().color_id);
         x_coord++;
     }
