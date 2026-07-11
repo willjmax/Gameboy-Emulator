@@ -14,6 +14,20 @@ enum class PPU_Mode : uint8_t {
     DRAWING  = 3
 };
 
+enum class PPU_REG : uint16_t {
+    LCDC = 0xFF40,
+    STAT = 0xFF41,
+    SCY  = 0xFF42,
+    SCX  = 0xFF43,
+    LY   = 0xFF44,
+    LYC  = 0xFF45,
+    DMA  = 0xFF46,
+    OBP0 = 0xFF48,
+    OBP1 = 0xFF49,
+    WY   = 0xFF4A,
+    WX   = 0xFF4B
+};
+
 class PPU {
     private:
         Interrupt& interrupt;
@@ -41,18 +55,6 @@ class PPU {
         static constexpr uint16_t DATA_AREA_0_START = 0x9000 - VRAM_START;
         static constexpr uint16_t DATA_AREA_1_START = 0x8000 - VRAM_START;
 
-        static constexpr uint16_t LCDC = 0xFF40 - REG_START;
-        static constexpr uint16_t STAT = 0xFF41 - REG_START;
-        static constexpr uint16_t SCY  = 0xFF42 - REG_START;
-        static constexpr uint16_t SCX  = 0xFF43 - REG_START;
-        static constexpr uint16_t LY   = 0xFF44 - REG_START;
-        static constexpr uint16_t LYC  = 0xFF45 - REG_START;
-        static constexpr uint16_t DMA  = 0xFF46 - REG_START;
-        static constexpr uint16_t OBP0 = 0xFF48 - REG_START;
-        static constexpr uint16_t OBP1 = 0xFF49 - REG_START;
-        static constexpr uint16_t WY   = 0xFF4A - REG_START;
-        static constexpr uint16_t WX   = 0xFF4B - REG_START;
-
         static constexpr uint8_t WIDTH  = 160;
         static constexpr uint8_t HEIGHT = 144;
 
@@ -70,6 +72,10 @@ class PPU {
         using ReadHandler = uint8_t (PPU::*)(uint16_t);
         using WriteHandler = void (PPU::*)(uint16_t, uint8_t);
 
+        // interal read/write
+        uint8_t read_register(PPU_REG reg);
+        void write_register(PPU_REG reg, uint8_t data);
+        
         std::array<ReadHandler, REG_SIZE> read_reg_handlers;
         std::array<WriteHandler, REG_SIZE> write_reg_handlers;
         uint8_t read_reg_default(uint16_t loc);

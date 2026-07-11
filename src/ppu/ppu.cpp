@@ -1,4 +1,5 @@
 #include "ppu/ppu.h"
+#include <iostream>
 
 PPU::PPU(Interrupt& i) : 
     interrupt(i), fetcher(this) {
@@ -19,71 +20,6 @@ PPU::PPU(Interrupt& i) :
     set_read_handlers();
     set_write_handlers();
     initialize_registers();
-}
-
-uint8_t PPU::read_reg_default(uint16_t loc) {
-    return registers[loc];
-}
-
-void PPU::write_reg_default(uint16_t loc, uint8_t data) {
-    registers[loc] = data;
-}
-
-uint8_t PPU::read_vram(uint16_t loc) {
-    return vram[loc];
-}
-
-uint8_t PPU::read_oam(uint16_t loc) {
-    return oam[loc];
-}
-
-uint8_t PPU::read_register(uint16_t loc) {
-    uint16_t shifted_loc = loc - REG_START;
-    ReadHandler handler = read_reg_handlers[shifted_loc];
-    return (this->*handler)(shifted_loc);
-}
-
-void PPU::write_vram(uint16_t loc, uint8_t data) {
-    vram[loc - VRAM_START] = data;
-}
-
-void PPU::write_oam(uint16_t loc, uint8_t data) {
-    oam[loc - OAM_START] = data;
-}
-
-void PPU::write_register(uint16_t loc, uint8_t data) {
-    uint16_t shifted_loc = loc - REG_START;
-    WriteHandler handler = write_reg_handlers[shifted_loc];
-    (this->*handler)(shifted_loc, data);
-}
-
-void PPU::write_LY(uint16_t loc, uint8_t data) {
-    return;
-}
-
-void PPU::inc_LY() {
-    registers[LY]++;
-    compare();
-}
-
-void PPU::reset_LY() {
-    registers[LY] = 0;
-    fetcher.reset_window();
-    compare();
-}
-
-void PPU::set_write_handlers() {
-    write_reg_handlers[LY] = &PPU::write_LY;
-    write_reg_handlers[STAT] = &PPU::write_stat;
-}
-
-void PPU::set_read_handlers() {
-    read_reg_handlers[STAT] = &PPU::read_stat;
-}
-
-void PPU::initialize_registers() {
-    registers[LCDC] = 0x91;
-    registers[STAT] = 0x85;
 }
 
 void PPU::tick(uint8_t cycles) {
@@ -119,7 +55,7 @@ void PPU::mode_0_hblank() {
 
     dots = 0;
     inc_LY();
-    if (registers[LY] == 144) {
+    if (read_register(PPU_REG::LY) == 144) {
         interrupt.request_vblank_interrupt();
         frame_ready = true;
         mode = PPU_Mode::VBLANK;
@@ -135,7 +71,7 @@ void PPU::mode_1_vblank() {
     }
 
     dots = 0;
-    if (registers[LY] == 153) {
+    if (read_register(PPU_REG::LY) == 153) {
         reset_LY();
         mode = PPU_Mode::OAM_SCAN;
     } else {
@@ -154,7 +90,7 @@ void PPU::mode_2_oam_scan() {
         Sprite sprite = fetch_sprite(offset);
         int size = obj_size();
 
-        if (sprite.on_scanline(registers[PPU::LY], size)){
+        if (sprite.on_scanline(read_register(PPU_REG::LY), size)){
             sprite_buffer.push_back(sprite);
         }
 
@@ -179,14 +115,15 @@ void PPU::mode_3_drawing() {
 
     auto pixel = fetcher.select();
     if (pixel.has_value()) {
-        write_to_framebuffer(x_coord, registers[LY], pixel.value().color_id);
+        std::cout << static_cast<int>(read_register(PPU_REG::LY)) << std::endl;
+        write_to_framebuffer(x_coord, read_register(PPU_REG::LY), pixel.value().color_id);
         x_coord++;
     }
 
     if (window_enabled() &&
         fetcher.fetcher_mode() == FetcherMode::BACKGROUND &&
-        registers[PPU::LY] >= registers[PPU::WY] &&
-        x_coord >= registers[PPU::WX] - 7) 
+        read_register(PPU_REG::LY) >= read_register(PPU_REG::WY) &&
+        x_coord >= read_register(PPU_REG::WX) - 7) 
     {
         fetcher.reset(FetcherMode::WINDOW);
         fetcher.inc_window();
@@ -205,11 +142,11 @@ void PPU::write_to_framebuffer(int x, int y, uint8_t pixel) {
 
 void PPU::compare() {
 
-    if ((registers[STAT] & 6) == 0) {
+    if ((read_register(PPU_REG::STAT) & 6) == 0) {
         return;
     }
 
-    if (registers[LY] == registers[LYC]) {
+    if (read_register(PPU_REG::LY) == read_register(PPU_REG::LYC)) {
         interrupt.request_stat_interrupt();
     }
 }

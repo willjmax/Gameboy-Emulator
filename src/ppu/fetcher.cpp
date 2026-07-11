@@ -14,7 +14,6 @@ void PixelFetcher::tick() {
 
     ticks = 0;
 
-
     if (mode == FetcherMode::OBJECT) {
         switch (obj_state) {
             case OBJ_State::GET_SPRITE_TILE:
@@ -56,11 +55,15 @@ void PixelFetcher::read_tile_id() {
     uint16_t tile_y;
     uint16_t offset;
 
+    uint8_t ly = ppu->read_register(PPU_REG::LY);
+    uint8_t scx = ppu->read_register(PPU_REG::SCX);
+    uint8_t scy = ppu->read_register(PPU_REG::SCY);
+
     switch (mode) {
         case FetcherMode::BACKGROUND:
             map_addr = ppu->bg_tile_map_area();
-            tile_x = (tile_index + (ppu->registers[PPU::SCX]/8)) & 0x1F;
-            tile_y = (ppu->registers[PPU::LY] + ppu->registers[PPU::SCY])/8 & 0x1F;
+            tile_x = (tile_index + (scx/8)) & 0x1F;
+            tile_y = (ly + scy)/8 & 0x1F;
             break;
         case FetcherMode::WINDOW:
             map_addr = ppu->window_tile_map_area();
@@ -77,7 +80,10 @@ void PixelFetcher::read_tile_id() {
 }
 
 void PixelFetcher::read_first_byte() {
-    uint16_t tile_line = (ppu->registers[PPU::LY] + ppu->registers[PPU::SCY]) % 8;
+    uint8_t ly = ppu->read_register(PPU_REG::LY);
+    uint8_t scy = ppu->read_register(PPU_REG::SCY);
+
+    uint16_t tile_line = (ly + scy) % 8;
     uint16_t addr;
 
     if (ppu->signed_mode()) {
@@ -92,7 +98,10 @@ void PixelFetcher::read_first_byte() {
 }
 
 void PixelFetcher::read_second_byte() {
-    uint16_t tile_line = (ppu->registers[PPU::LY] + ppu->registers[PPU::SCY]) % 8;
+    uint8_t ly = ppu->read_register(PPU_REG::LY);
+    uint8_t scy = ppu->read_register(PPU_REG::SCY);
+
+    uint16_t tile_line = (ly + scy) % 8;
     uint16_t addr;
 
     if (ppu->signed_mode()) {
@@ -160,7 +169,8 @@ void PixelFetcher::request_obj_mode(Sprite* sprite) {
 
 void PixelFetcher::get_sprite_tile() {
     uint8_t tile_index = oam_sprite->tile_index();
-    uint8_t sprite_y_offset = (ppu->registers[PPU::LY] + 16) - oam_sprite->y_pos();
+    uint8_t ly = ppu->read_register(PPU_REG::LY);
+    uint8_t sprite_y_offset = ly + 16 - oam_sprite->y_pos();
 
     tile_id = tile_index*16 + sprite_y_offset*2;
     obj_state = OBJ_State::GET_SPRITE_LOW;
@@ -214,7 +224,8 @@ std::optional<Pixel> PixelFetcher::select() {
         bg_pixel.value().color_id = 0x00;
     }
 
-    if (ppu->scx_cnt < ppu->registers[PPU::SCX] % 8) {
+    uint8_t scx = ppu->read_register(PPU_REG::SCX);
+    if (ppu->scx_cnt < scx % 8) {
         ppu->scx_cnt++;
         return std::nullopt;
     }
