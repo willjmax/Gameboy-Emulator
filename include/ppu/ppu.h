@@ -14,19 +14,6 @@ enum class PPU_Mode : uint8_t {
     DRAWING  = 3
 };
 
-enum class PPU_REG : uint16_t {
-    LCDC = 0xFF40,
-    STAT = 0xFF41,
-    SCY  = 0xFF42,
-    SCX  = 0xFF43,
-    LY   = 0xFF44,
-    LYC  = 0xFF45,
-    DMA  = 0xFF46,
-    OBP0 = 0xFF48,
-    OBP1 = 0xFF49,
-    WY   = 0xFF4A,
-    WX   = 0xFF4B
-};
 
 class PPU {
     private:
@@ -114,6 +101,7 @@ class PPU {
         void mode_3_drawing();
 
         std::optional<Sprite> sprite_on_column();
+        uint8_t color_from_pixel(Pixel pixel);
 
     public:
         PPU(Interrupt& i);

@@ -2,8 +2,7 @@
 #include <stdexcept>
 #include "ppu/fetcher.h"
 #include "ppu/ppu.h"
-
-#include <iostream>
+#include "ppu/registers.h"
 
 void PixelFetcher::tick() {
 
@@ -143,7 +142,7 @@ void PixelFetcher::push_to_fifo() {
         high = (byte2 >> (7 - j)) & 0x01;
 
         color_id = (high << 1) | low; 
-        pixel = Pixel(color_id, false);
+        pixel = Pixel(color_id, false, PPU_REG::BGP);
         BG_FIFO.push(pixel);
     }
 
@@ -162,15 +161,15 @@ void PixelFetcher::reset(FetcherMode f_mode) {
 
 // object mode
 
-void PixelFetcher::request_obj_mode(Sprite* sprite) {
+void PixelFetcher::request_obj_mode(Sprite sprite) {
     obj_requested = true;
     oam_sprite = sprite;
 }
 
 void PixelFetcher::get_sprite_tile() {
-    uint8_t tile_index = oam_sprite->tile_index();
+    uint8_t tile_index = oam_sprite.tile_index();
     uint8_t ly = ppu->read_register(PPU_REG::LY);
-    uint8_t sprite_y_offset = ly + 16 - oam_sprite->y_pos();
+    uint8_t sprite_y_offset = ly + 16 - oam_sprite.y_pos();
 
     tile_id = tile_index*16 + sprite_y_offset*2;
     obj_state = OBJ_State::GET_SPRITE_LOW;
@@ -202,7 +201,7 @@ void PixelFetcher::merge_fifo() {
         high = (byte2 >> (7 - j)) & 0x01;
 
         color_id = (high << 1) | low; 
-        pixel = Pixel(color_id, oam_sprite->priority());
+        pixel = Pixel(color_id, oam_sprite.priority(), oam_sprite.palette());
         OBJ_FIFO.push(pixel);
     }
 

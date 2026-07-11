@@ -1,5 +1,12 @@
 #include <ppu/oam.h>
 
+Sprite::Sprite() {
+    _priority = false;
+    _y_flip = false;
+    _x_flip = false;
+    _palette = PPU_REG::OBP1;
+}
+
 Sprite::Sprite(uint8_t y_pos, uint8_t x_pos, uint8_t tile_index, uint8_t attributes) :
     _y_pos(y_pos), _x_pos(x_pos), _tile_index(tile_index) {
 
@@ -8,9 +15,9 @@ Sprite::Sprite(uint8_t y_pos, uint8_t x_pos, uint8_t tile_index, uint8_t attribu
     _x_flip = (attributes & 32) == 32;
 
     if ((attributes & 16) == 16) {
-        _palette = 0xFF49;
+        _palette = PPU_REG::OBP1;
     } else {
-        _palette = 0xFF48;
+        _palette = PPU_REG::OBP0;
     }
 }
 

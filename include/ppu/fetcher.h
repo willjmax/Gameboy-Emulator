@@ -9,6 +9,7 @@ class PPU;
 struct Pixel {
     uint8_t color_id;
     bool priority;
+    PPU_REG palette;
 };
 
 class PixelFIFO {
@@ -76,7 +77,7 @@ class PixelFetcher {
 
         void inc_window();
         void reset_window();
-        void request_obj_mode(Sprite* sprite);
+        void request_obj_mode(Sprite sprite);
 
     private:
         FetcherMode mode = FetcherMode::BACKGROUND;
@@ -106,5 +107,5 @@ class PixelFetcher {
         void merge_fifo();
         FetcherMode prev_mode;
         bool obj_requested;
-        Sprite* oam_sprite;
+        Sprite oam_sprite;
 };
