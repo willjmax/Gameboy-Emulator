@@ -115,8 +115,7 @@ void PPU::mode_3_drawing() {
 
     auto pixel = fetcher.select();
     if (pixel.has_value()) {
-        uint8_t color = color_from_pixel(pixel.value());
-        write_to_framebuffer(x_coord, read_register(PPU_REG::LY), color);
+        write_to_framebuffer(x_coord, read_register(PPU_REG::LY), pixel.value().color_id);
         x_coord++;
     }
 
@@ -169,11 +168,4 @@ std::optional<Sprite> PPU::sprite_on_column() {
     }
 
     return std::nullopt;
-}
-
-uint8_t PPU::color_from_pixel(Pixel pixel) {
-    uint8_t palette = read_register(pixel.palette);
-    uint8_t offset = pixel.color_id * 2;
-
-    return (palette >> offset) & 0x03;
 }

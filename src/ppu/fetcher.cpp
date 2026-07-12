@@ -142,7 +142,9 @@ void PixelFetcher::push_to_fifo() {
         high = (byte2 >> (7 - j)) & 0x01;
 
         color_id = (high << 1) | low; 
-        pixel = Pixel(color_id, false, PPU_REG::BGP);
+        color_id = color_id_lookup(PPU_REG::BGP, color_id);
+
+        pixel = Pixel(color_id, false);
         BG_FIFO.push(pixel);
     }
 
@@ -201,7 +203,8 @@ void PixelFetcher::merge_fifo() {
         high = (byte2 >> (7 - j)) & 0x01;
 
         color_id = (high << 1) | low; 
-        pixel = Pixel(color_id, oam_sprite.priority(), oam_sprite.palette());
+        color_id = color_id_lookup(oam_sprite.palette(), color_id);
+        pixel = Pixel(color_id, oam_sprite.priority());
         OBJ_FIFO.push(pixel);
     }
 
@@ -276,3 +279,9 @@ void PixelFetcher::reset_window() {
     window_count = -1;
 }
 
+uint8_t PixelFetcher::color_id_lookup(PPU_REG palette_reg, uint8_t bits) {
+    uint8_t palette = ppu->read_register(palette_reg);
+    uint8_t offset = bits * 2;
+
+    return (palette >> offset) & 0x03;
+}

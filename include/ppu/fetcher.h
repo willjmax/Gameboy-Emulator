@@ -3,13 +3,13 @@
 #include <optional>
 
 #include "ppu/oam.h"
+#include "ppu/registers.h"
 
 class PPU;
 
 struct Pixel {
     uint8_t color_id;
     bool priority;
-    PPU_REG palette;
 };
 
 class PixelFIFO {
@@ -93,6 +93,8 @@ class PixelFetcher {
         uint8_t byte1;
         uint8_t byte2;
         bool delay = true;
+
+        uint8_t color_id_lookup(PPU_REG palette, uint8_t bits);
 
         // bg mode states
         void read_tile_id();
