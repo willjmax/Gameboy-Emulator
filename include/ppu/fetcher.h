@@ -7,6 +7,8 @@
 
 class PPU;
 
+uint8_t reverse_bits(uint8_t bits);
+
 struct Pixel {
     uint8_t color_id;
     bool priority;

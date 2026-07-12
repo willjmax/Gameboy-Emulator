@@ -174,16 +174,33 @@ void PixelFetcher::get_sprite_tile() {
     uint8_t sprite_y_offset = ly + 16 - oam_sprite.y_pos();
 
     tile_id = tile_index*16 + sprite_y_offset*2;
+
+    if (oam_sprite.y_flip()) {
+        tile_id ^= 0x000E;
+    }
+
     obj_state = OBJ_State::GET_SPRITE_LOW;
 }
 
 void PixelFetcher::get_sprite_low() {
+
     byte1 = ppu->read_vram(tile_id);
+
+    if (oam_sprite.x_flip()) {
+        byte1 = reverse_bits(byte1);
+    }
+
     obj_state = OBJ_State::GET_SPRITE_HIGH;
 }
 
 void PixelFetcher::get_sprite_high() {
+
     byte2 = ppu->read_vram(tile_id+1);
+
+    if (oam_sprite.x_flip()) {
+        byte2 = reverse_bits(byte2);
+    }
+
     obj_state = OBJ_State::MERGE_FIFO;
 }
 
@@ -284,4 +301,11 @@ uint8_t PixelFetcher::color_id_lookup(PPU_REG palette_reg, uint8_t bits) {
     uint8_t offset = bits * 2;
 
     return (palette >> offset) & 0x03;
+}
+
+uint8_t reverse_bits(uint8_t x) {
+    x = ((x & 0xF0) >> 4) | ((x & 0x0F) << 4); // Swap 4-bit nibbles
+    x = ((x & 0xCC) >> 2) | ((x & 0x33) << 2); // Swap 2-bit pairs
+    x = ((x & 0xAA) >> 1) | ((x & 0x55) << 1); // Swap individual adjacent bits
+    return x;
 }
