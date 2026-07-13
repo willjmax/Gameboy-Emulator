@@ -17,6 +17,8 @@ class Sprite {
 
         bool on_scanline(int ly, int obj_size);
 
+        bool fetched = false;
+
     private:
         uint8_t _y_pos;
         uint8_t _x_pos;

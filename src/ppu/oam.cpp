@@ -22,15 +22,11 @@ Sprite::Sprite(uint8_t y_pos, uint8_t x_pos, uint8_t tile_index, uint8_t attribu
 }
 
 bool Sprite::on_scanline(int ly, int obj_size) {
-    if (_x_pos <= 0) {
-        return false;
-    }
-
     if (_y_pos > ly + 16) {
         return false;
     }
 
-    if (_y_pos + obj_size < ly + 16) {
+    if (_y_pos + obj_size <= ly + 16) {
         return false;
     }
 

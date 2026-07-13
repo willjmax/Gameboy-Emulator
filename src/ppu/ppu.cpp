@@ -1,5 +1,4 @@
 #include "ppu/ppu.h"
-#include <iostream>
 
 PPU::PPU(Interrupt& i) : 
     interrupt(i), fetcher(this) {
@@ -86,7 +85,7 @@ void PPU::mode_2_oam_scan() {
 
     sprite_buffer.clear();
 
-    for (uint16_t offset = 0; offset < 160; offset += 4) {
+    for (uint16_t offset = 0; offset < PPU::WIDTH; offset += 4) {
         Sprite sprite = fetch_sprite(offset);
         int size = obj_size();
 
@@ -128,7 +127,7 @@ void PPU::mode_3_drawing() {
         fetcher.inc_window();
     }
 
-    if (x_coord == 160) {
+    if (x_coord == PPU::WIDTH) {
         fetcher.reset(FetcherMode::BACKGROUND);
         mode = PPU_Mode::HBLANK;
     }
@@ -160,10 +159,24 @@ Sprite PPU::fetch_sprite(uint16_t offset) {
 }
 
 std::optional<Sprite> PPU::sprite_on_column() {
-    for (int i = 0; i < (int)sprite_buffer.size(); i++) {
-        Sprite sprite = sprite_buffer[i];
-        if (sprite.x_pos() == x_coord + 8) {
-            return sprite; 
+
+    Sprite* sprite = nullptr;
+
+    for (auto& current_sprite : sprite_buffer) {
+        uint8_t pos = current_sprite.x_pos();
+        if (x_coord + 8 >= pos && x_coord < pos) {
+            if (sprite == nullptr || pos < sprite->x_pos()) {
+                sprite = &current_sprite;
+            }
+        }
+    }
+
+    if (sprite != nullptr) {
+        if (sprite->fetched) {
+            return std::nullopt;
+        } else {
+            sprite->fetched = true;
+            return *sprite;
         }
     }
 
