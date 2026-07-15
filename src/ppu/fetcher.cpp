@@ -4,6 +4,8 @@
 #include "ppu/ppu.h"
 #include "ppu/registers.h"
 
+#include <iostream>
+
 void PixelFetcher::tick() {
 
     ticks++;
@@ -169,16 +171,21 @@ void PixelFetcher::request_obj_mode(Sprite sprite) {
 }
 
 void PixelFetcher::get_sprite_tile() {
-    uint8_t tile_index = oam_sprite.tile_index();
+    uint8_t raw_index = oam_sprite.tile_index();
     uint8_t ly = ppu->read_register(PPU_REG::LY);
-    uint8_t sprite_y_offset = ly + 16 - oam_sprite.y_pos();
+    uint8_t sprite_line = ly + 16 - oam_sprite.y_pos();
 
-    tile_id = tile_index*16 + sprite_y_offset*2;
-
-    if (oam_sprite.y_flip()) {
-        tile_id ^= 0x000E;
+    if(ppu->obj_size() == 16) {
+        bool lsb_override = (sprite_line >= 8) ^ oam_sprite.y_flip();
+        raw_index = (raw_index & 0xFE) | (lsb_override ? 0x01 : 0x00);
     }
 
+    if (oam_sprite.y_flip()) {
+        uint8_t max_line = (ppu->obj_size() == 16) ? 15 : 7;
+        sprite_line = max_line - sprite_line;
+    }
+
+    tile_id = (raw_index << 4) | (sprite_line << 1);
     obj_state = OBJ_State::GET_SPRITE_LOW;
 }
 

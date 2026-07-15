@@ -33,7 +33,7 @@ void Display::update(std::array<uint8_t, WIDTH*HEIGHT> ppu_framebuffer) {
     SDL_RenderClear(renderer);
     SDL_RenderTexture(renderer, texture, nullptr, nullptr);
 
-    draw_debug_grid(renderer, 8);
+    //draw_debug_grid(renderer, 8);
     SDL_RenderPresent(renderer);
 }
 
