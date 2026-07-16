@@ -99,9 +99,10 @@ class PPU {
         void mode_1_vblank(); 
         void mode_2_oam_scan();
         void mode_3_drawing();
+        bool sprite_fetched = false;
 
         std::optional<Sprite> sprite_on_column();
-        uint8_t color_from_pixel(Pixel pixel);
+        uint8_t color_id_lookup(Pixel pixel);
 
     public:
         PPU(Interrupt& i);

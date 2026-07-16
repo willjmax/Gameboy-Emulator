@@ -12,6 +12,8 @@ uint8_t reverse_bits(uint8_t bits);
 struct Pixel {
     uint8_t color_id;
     bool priority;
+    PPU_REG palette;
+    uint8_t pos;
 };
 
 class PixelFIFO {
@@ -22,6 +24,36 @@ class PixelFIFO {
                 tail = (tail + 1) % 16;
                 count++;
             }
+        }
+
+        void merge(PixelFIFO pixels) {
+            int offset = 0;
+            while (pixels.size() > 0) {
+                int index = (head + offset) % 16;
+                Pixel pixel = pixels.pop().value();
+
+                if (offset >= count) {
+                    buffer[index] = pixel;
+                    count++;
+                    offset++;
+                    continue;
+                }
+
+                Pixel current = buffer[index];
+                Pixel selected;
+
+                if (current.color_id == 0x00) {
+                    selected = pixel;
+                } else if (pixel.color_id == 0x00) {
+                    selected = current;
+                } else {
+                    selected = (current.pos <= pixel.pos) ? current : pixel;
+                }
+
+                buffer[index] = selected;
+                offset++;
+            }
+
         }
 
         std::optional<Pixel> pop() {
@@ -35,6 +67,10 @@ class PixelFIFO {
         std::optional<Pixel> peak() {
             if (count == 0) return std::nullopt;
             return buffer[head];
+        }
+
+        bool empty() {
+            return count == 0;
         }
 
         void clear() { head = 0; tail = 0; count = 0;}
@@ -80,6 +116,7 @@ class PixelFetcher {
         void inc_window();
         void reset_window();
         void request_obj_mode(Sprite sprite);
+        void clear_fifos();
 
     private:
         FetcherMode mode = FetcherMode::BACKGROUND;

@@ -4,8 +4,6 @@
 #include "ppu/ppu.h"
 #include "ppu/registers.h"
 
-#include <iostream>
-
 void PixelFetcher::tick() {
 
     ticks++;
@@ -124,13 +122,6 @@ void PixelFetcher::read_second_byte() {
 
 void PixelFetcher::push_to_fifo() {
 
-    if (obj_requested) {
-        prev_mode = mode;
-        mode = FetcherMode::OBJECT;
-        obj_state = OBJ_State::GET_SPRITE_TILE;
-        obj_requested = false;
-    }
-
     if (BG_FIFO.size() > 8) {
         return;
     }
@@ -142,11 +133,9 @@ void PixelFetcher::push_to_fifo() {
     for (int j = 0; j < 8; j++) {
         low = (byte1 >> (7 - j)) & 0x01;
         high = (byte2 >> (7 - j)) & 0x01;
-
         color_id = (high << 1) | low; 
-        color_id = color_id_lookup(PPU_REG::BGP, color_id);
 
-        pixel = Pixel(color_id, false);
+        pixel = Pixel(color_id, false, PPU_REG::BGP, 0);
         BG_FIFO.push(pixel);
     }
 
@@ -166,8 +155,10 @@ void PixelFetcher::reset(FetcherMode f_mode) {
 // object mode
 
 void PixelFetcher::request_obj_mode(Sprite sprite) {
-    obj_requested = true;
     oam_sprite = sprite;
+    prev_mode = mode;
+    mode = FetcherMode::OBJECT;
+    obj_state = OBJ_State::GET_SPRITE_TILE;
 }
 
 void PixelFetcher::get_sprite_tile() {
@@ -212,25 +203,25 @@ void PixelFetcher::get_sprite_high() {
 }
 
 void PixelFetcher::merge_fifo() {
-    if (OBJ_FIFO.size() > 8) {
-        return;
-    }
 
+    PixelFIFO pixels;
     Pixel pixel;
     uint8_t low;
     uint8_t high;
     uint8_t color_id;
 
-    OBJ_FIFO.clear();
-    for (int j = 0; j < 8; j++) {
+    int start = ppu->x_coord - oam_sprite.x_pos() + 8;
+
+    for (int j = start; j < 8; j++) {
         low = (byte1 >> (7 - j)) & 0x01;
         high = (byte2 >> (7 - j)) & 0x01;
-
         color_id = (high << 1) | low; 
-        color_id = color_id_lookup(oam_sprite.palette(), color_id);
-        pixel = Pixel(color_id, oam_sprite.priority());
-        OBJ_FIFO.push(pixel);
+
+        pixel = Pixel(color_id, oam_sprite.priority(), oam_sprite.palette(), oam_sprite.x_pos());
+        pixels.push(pixel);
     }
+
+    OBJ_FIFO.merge(pixels);
 
     obj_state = OBJ_State::GET_SPRITE_TILE;
     mode = prev_mode;
@@ -243,21 +234,22 @@ std::optional<Pixel> PixelFetcher::select() {
         return std::nullopt;
     }
 
+    if (BG_FIFO.empty()) {
+        return std::nullopt;
+    }
+
+    uint8_t scx = ppu->read_register(PPU_REG::SCX);
+    if (ppu->scx_cnt < scx % 8) {
+        BG_FIFO.pop();
+        ppu->scx_cnt++;
+        return std::nullopt;
+    }
+
     auto bg_pixel = BG_FIFO.pop();
     auto obj_pixel = OBJ_FIFO.pop();
 
     if (!ppu->bg_window_enabled() && bg_pixel.has_value()) {
         bg_pixel.value().color_id = 0x00;
-    }
-
-    uint8_t scx = ppu->read_register(PPU_REG::SCX);
-    if (ppu->scx_cnt < scx % 8) {
-        ppu->scx_cnt++;
-        return std::nullopt;
-    }
-
-    if (!bg_pixel.has_value()) {
-        return obj_pixel;
     }
 
     if (!obj_pixel.has_value()) {
@@ -282,11 +274,9 @@ std::optional<Pixel> PixelFetcher::select() {
 
     if (obj_color_id == 0x00) {
         return bg_pixel;
-    } else {
-        return obj_pixel;
     }
 
-    return std::nullopt;
+    return obj_pixel;
 }
 
 FetcherMode PixelFetcher::fetcher_mode() {
@@ -303,11 +293,9 @@ void PixelFetcher::reset_window() {
     window_count = -1;
 }
 
-uint8_t PixelFetcher::color_id_lookup(PPU_REG palette_reg, uint8_t bits) {
-    uint8_t palette = ppu->read_register(palette_reg);
-    uint8_t offset = bits * 2;
-
-    return (palette >> offset) & 0x03;
+void PixelFetcher::clear_fifos() {
+    BG_FIFO.clear();
+    OBJ_FIFO.clear();
 }
 
 uint8_t reverse_bits(uint8_t x) {
