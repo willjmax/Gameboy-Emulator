@@ -41,6 +41,10 @@ uint8_t Bus::read(uint16_t loc) {
         case IF_ENABLE:
             return interrupt.read_if_enable();
 
+        // joypad
+        case JOYP:
+            return joypad.read_joypad();
+
         default:
             return Bus::memory[loc];
     }

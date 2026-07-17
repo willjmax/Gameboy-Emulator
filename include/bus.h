@@ -6,12 +6,14 @@
 #include "ppu/ppu.h"
 #include "timer.h"
 #include "interrupt.h"
+#include "joypad.h"
 
 class Bus {
     public:
-        Bus(Timer& t, Interrupt& i, APU& apu, PPU& ppu) :
+        Bus(Timer& t, Interrupt& i, APU& apu, PPU& ppu, Joypad& joypad) :
             timer(t), interrupt(i),
-            apu(apu), ppu(ppu) {};
+            apu(apu), ppu(ppu),
+            joypad(joypad) {};
 
         uint8_t read(uint16_t loc);
         void write(uint16_t loc, uint8_t byte);
@@ -27,6 +29,7 @@ class Bus {
         Interrupt& interrupt;
         APU& apu;
         PPU& ppu;
+        Joypad& joypad;
 
         static constexpr uint16_t ROM_FIXED_START = 0x0000; // Bank 00
 
@@ -51,6 +54,9 @@ class Bus {
         // Interrupt addresses
         static constexpr uint16_t IF_REG    = 0xFF0F;
         static constexpr uint16_t IF_ENABLE = 0xFFFF;
+
+        // Joypad address
+        static constexpr uint16_t JOYP = 0xFF00;
 
         // blargg
         static constexpr uint16_t TERMINAL = 0xFF01;

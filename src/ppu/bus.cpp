@@ -66,6 +66,7 @@ void PPU::set_read_handlers() {
 void PPU::initialize_registers() {
     write_register(PPU_REG::LCDC, 0x91);
     write_register(PPU_REG::STAT, 0x85);
+    write_register(PPU_REG::BGP, 0xFC);
 }
 
 void PPU::write_LY(uint16_t loc, uint8_t data) {
