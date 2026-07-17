@@ -98,6 +98,10 @@ void Bus::write(uint16_t loc, uint8_t byte) {
             interrupt.write_if_enable(byte);
             break;
 
+        case JOYP:
+            joypad.write_joypad(byte);
+            break;
+
         case TERMINAL:
             std::cout << (char)byte << std::flush;
             Bus::memory[loc] = byte;

@@ -34,4 +34,6 @@ class GameBoy {
         Display display;
 
         bool running;
+
+        void handle_joypad_input(SDL_Keycode key, bool pressed);
 };

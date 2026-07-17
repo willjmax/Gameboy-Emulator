@@ -1,5 +1,4 @@
 #include <ppu/ppu.h>
-#include <iostream>
 
 uint8_t PPU::read_reg_default(uint16_t loc) {
     return registers[loc];

@@ -5,7 +5,6 @@ uint16_t Interrupt::check_interrupts() {
 
     if (interrupts & 0x01) {
         halted = false;
-
         if (ime) {
             ime = false;
             clear_vblank_interrupt();
@@ -15,7 +14,6 @@ uint16_t Interrupt::check_interrupts() {
 
     if (interrupts & 0x02) {
         halted = false;
-
         if (ime) {
             ime = false;
             clear_stat_interrupt();
@@ -34,7 +32,6 @@ uint16_t Interrupt::check_interrupts() {
 
     if (interrupts & 0x08) {
         halted = false;
-        
         if (ime) {
             ime = false;
             clear_serial_interrupt();
@@ -44,7 +41,6 @@ uint16_t Interrupt::check_interrupts() {
 
     if (interrupts & 0x10) {
         halted = false;
-
         if (ime) {
             ime = false;
             clear_joypad_interrupt();
@@ -72,7 +68,7 @@ void Interrupt::request_serial_interrupt() {
 }
 
 void Interrupt::request_joypad_interrupt() {
-    Interrupt::if_reg |= 0x0F;
+    Interrupt::if_reg |= 0x10;
 }
 
 void Interrupt::clear_vblank_interrupt() {
@@ -92,7 +88,7 @@ void Interrupt::clear_serial_interrupt() {
 }
 
 void Interrupt::clear_joypad_interrupt() {
-     Interrupt::if_reg &= ~0x0F;
+     Interrupt::if_reg &= ~0x10;
 }
 
 void Interrupt::set_ime_delay() {
