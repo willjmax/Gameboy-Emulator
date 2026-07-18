@@ -52,7 +52,6 @@ class Interrupt {
         void clear_serial_interrupt();
         void clear_joypad_interrupt();
 
-
         // interrupt vectors
         static constexpr uint16_t VBLANK = 0x0040;
         static constexpr uint16_t STAT   = 0x0048;

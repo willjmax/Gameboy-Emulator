@@ -34,8 +34,17 @@ class CPU {
         REG_PAIR(d, e, de);
         REG_PAIR(h, l, hl);
 
+        static constexpr uint16_t INSTR_RANGE_END = 0xFDFF;
+
         uint16_t pc;
         uint16_t sp;
+
+        uint8_t current_opcode;
+
+        // pc
+        void inc_pc();
+        void set_pc(uint16_t loc);
+        void jmp_pc(uint16_t offset);
 
         // fetch bytes
         uint8_t fetch();
@@ -80,6 +89,9 @@ class CPU {
         void setH(uint8_t flag);
         void setC(uint8_t flag);
         bool cond(uint8_t cond);
+
+        // error handling
+        void check_pc_oob();
 
         // helper class for testing
         friend class CPUTester;

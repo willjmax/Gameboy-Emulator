@@ -79,7 +79,7 @@ void CPU::execute_block_00(Instruction instr) {
         // JR imm8
         case 0x18: {
             int8_t offset = (int8_t)fetch();
-            pc += offset;
+            jmp_pc(offset);
             bus.tick(4);
             return;
         }
@@ -172,7 +172,7 @@ void CPU::execute_block_00(Instruction instr) {
         uint8_t data = instr.range(4, 3);
         int8_t offset = (int8_t)fetch();
         if (cond(data)) {
-            pc += offset;
+            jmp_pc(offset);
             bus.tick(4);
         }
         return;
@@ -433,7 +433,7 @@ void CPU::execute_block_11(Instruction instr) {
 
         // JP imm16
         case 0xC3: {
-            pc = fetch_two_bytes();
+            set_pc(fetch_two_bytes());
             bus.tick(4);
             return;
         }
@@ -473,7 +473,8 @@ void CPU::execute_block_11(Instruction instr) {
         case 0xC9: {
             uint8_t lo = pop();
             uint8_t hi = pop();
-            pc = (hi << 8) | lo;
+            uint16_t loc = (hi << 8) | lo;
+            set_pc(loc);
             bus.tick(4);
             return;
         }
@@ -491,7 +492,7 @@ void CPU::execute_block_11(Instruction instr) {
             bus.tick(4);
             push((pc >> 8) & 0xFF);
             push(pc & 0xFF);
-            pc = loc;
+            set_pc(loc);
             return;
         }
 
@@ -513,7 +514,8 @@ void CPU::execute_block_11(Instruction instr) {
             interrupt.set_ime();
             uint8_t lo = pop();
             uint8_t hi = pop();
-            pc = (hi << 8) | lo;
+            uint16_t loc = (hi << 8) | lo;
+            set_pc(loc);
             bus.tick(4);
             return;
         }
@@ -575,7 +577,7 @@ void CPU::execute_block_11(Instruction instr) {
 
         // JP HL
         case 0xE9: {
-            pc = hl;
+            set_pc(hl);
             return;
         }
 
@@ -719,7 +721,7 @@ void CPU::execute_block_11(Instruction instr) {
                     uint8_t lo = pop();
                     uint8_t hi = pop();
                     uint16_t loc = (hi << 8) | lo;
-                    pc = loc;
+                    set_pc(loc);
                     bus.tick(4);
                 }
 
@@ -733,7 +735,7 @@ void CPU::execute_block_11(Instruction instr) {
                 
                 if (cond(data)) {
                     bus.tick(4);
-                    pc = loc;
+                    set_pc(loc);
                 }
 
                 return;
@@ -748,7 +750,7 @@ void CPU::execute_block_11(Instruction instr) {
                     bus.tick(4);
                     push((pc >> 8) & 0xFF);
                     push(pc & 0xFF);
-                    pc = loc;
+                    set_pc(loc);
                 }
 
                 return;
@@ -766,7 +768,7 @@ void CPU::execute_block_11(Instruction instr) {
         uint8_t lo = pc & 0xFF;
         push(hi);
         push(lo);
-        pc = target;
+        set_pc(target);
         bus.tick(4);
         return;
     }

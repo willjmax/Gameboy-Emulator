@@ -1,9 +1,11 @@
+#include <cassert>
+#include <iostream>
 #include <stdexcept>
 #include "cpu.h"
 
 void CPU::step() {
-    uint8_t opcode = fetch();
-    Instruction instr(opcode);
+    current_opcode = fetch();
+    Instruction instr(current_opcode);
     execute(instr);
 }
 
@@ -12,24 +14,24 @@ void CPU::handle_interrupt() {
     if (interrupt_loc > 0) {
         bus.tick(8);
         push2(pc);
-        pc = interrupt_loc;
+        set_pc(interrupt_loc);
         bus.tick(4);
     }
 }
 
 uint8_t CPU::fetch() {
     uint8_t opcode = bus.read(pc);
-    pc++;
+    inc_pc();
 
     return opcode;
 }
 
 uint16_t CPU::fetch_two_bytes() {
     uint8_t byte1 = bus.read(pc);        
-    pc++;
+    inc_pc();
 
     uint8_t byte2 = bus.read(pc);
-    pc++;
+    inc_pc();
 
     return (byte2 << 8) | byte1;
 }
@@ -278,4 +280,28 @@ uint8_t CPU::getH() {
 
 uint8_t CPU::getC() {
     return (f & (1 << 4)) != 0;
+}
+
+void CPU::inc_pc() {
+    pc++;
+    check_pc_oob();
+}
+
+void CPU::set_pc(uint16_t loc) {
+    pc = loc;
+    check_pc_oob();
+}
+
+void CPU::jmp_pc(uint16_t offset) {
+    pc += offset;
+    check_pc_oob();
+}
+
+void CPU::check_pc_oob() {
+    if (pc > INSTR_RANGE_END) {
+        std::cerr << std::format("PC out of bounds: 0x{:04X}. "
+                                 "Caused by opcode 0x{:02X}\n", 
+                                 pc, current_opcode) << std::endl;
+        std::abort();
+    }
 }
