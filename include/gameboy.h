@@ -10,12 +10,13 @@
 class GameBoy {
     public:
         GameBoy() :
+            mbc1(),
             interrupt(),
             joypad(interrupt),
             timer(interrupt),
             apu(),
             ppu(interrupt),
-            bus(timer, interrupt, apu, ppu, joypad),
+            bus(timer, interrupt, apu, ppu, joypad, mbc1),
             cpu(bus, timer, interrupt),
             display(),
             running(false) {};
@@ -24,6 +25,7 @@ class GameBoy {
         void run();
         
     private:
+        MBC1 mbc1;
         Interrupt interrupt;
         Joypad joypad;
         Timer timer;

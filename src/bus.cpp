@@ -7,6 +7,10 @@ uint8_t Bus::read(uint16_t loc) {
 
     Bus::tick(4);
 
+    if (loc >= MBC1_START && loc <= MBC1_END) {
+        return mbc1.read(loc);
+    }
+
     if (loc >= APU_START && loc <= APU_END) {
         return apu.read(loc);
     }
@@ -53,6 +57,11 @@ uint8_t Bus::read(uint16_t loc) {
 void Bus::write(uint16_t loc, uint8_t byte) {
 
     Bus::tick(4);
+
+    if (loc >= MBC1_START && loc <= MBC1_END) {
+        mbc1.write(loc, byte);
+        return;
+    }
 
     if (loc >= APU_START && loc <= APU_END) {
         apu.write(loc, byte);

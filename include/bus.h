@@ -7,13 +7,15 @@
 #include "timer.h"
 #include "interrupt.h"
 #include "joypad.h"
+#include "mbc1.h"
 
 class Bus {
     public:
-        Bus(Timer& t, Interrupt& i, APU& apu, PPU& ppu, Joypad& joypad) :
+        Bus(Timer& t, Interrupt& i, APU& apu, PPU& ppu, Joypad& joypad,
+            MBC1& mbc1) :
             timer(t), interrupt(i),
             apu(apu), ppu(ppu),
-            joypad(joypad) {};
+            joypad(joypad), mbc1(mbc1) {};
 
         uint8_t read(uint16_t loc);
         void write(uint16_t loc, uint8_t byte);
@@ -30,12 +32,17 @@ class Bus {
         APU& apu;
         PPU& ppu;
         Joypad& joypad;
+        MBC1& mbc1;
 
-        static constexpr uint16_t ROM_FIXED_START = 0x0000; // Bank 00
+        static constexpr uint16_t ROM_FIXED_START = 0x0000;
+
+        // MBC1
+        static constexpr uint16_t MBC1_START = 0x0000;
+        static constexpr uint16_t MBC1_END   = 0x7FFF;
 
         // APU
-        static constexpr uint16_t APU_START       = 0xFF10;
-        static constexpr uint16_t APU_END         = 0xFF3F;
+        static constexpr uint16_t APU_START = 0xFF10;
+        static constexpr uint16_t APU_END   = 0xFF3F;
 
         // PPU
         static constexpr uint16_t VRAM_START = 0x8000;

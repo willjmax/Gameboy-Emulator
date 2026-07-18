@@ -11,10 +11,11 @@ using json = nlohmann::json;
 class CPUTester {
     public:
         CPUTester() :
+            mbc1(),
             interrupt(), timer(interrupt),
             joypad(interrupt),
             apu(), ppu(interrupt),
-            bus(timer, interrupt, apu, ppu, joypad),
+            bus(timer, interrupt, apu, ppu, joypad, mbc1),
             cpu(bus, timer, interrupt) {};
 
         void setup_sm83(json initial);
@@ -40,6 +41,7 @@ class CPUTester {
         }
 
     private:
+        MBC1 mbc1;
         Interrupt interrupt;
         Timer timer;
         Joypad joypad;
