@@ -13,7 +13,7 @@ uint8_t PPU::read_vram(uint16_t loc) {
 }
 
 uint8_t PPU::read_oam(uint16_t loc) {
-    return oam[loc];
+    return oam[loc - OAM_START];
 }
 
 uint8_t PPU::read_register(uint16_t loc) {
