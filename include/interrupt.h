@@ -43,8 +43,8 @@ class Interrupt {
         bool trigger_set_ime;
         bool delay_ime;
 
-        uint8_t if_reg;
-        uint8_t if_enable;
+        uint8_t if_reg = 0x00;
+        uint8_t if_enable = 0x00;
 
         void clear_vblank_interrupt();
         void clear_stat_interrupt();

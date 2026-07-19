@@ -15,13 +15,14 @@ class Bus {
             apu(apu), ppu(ppu),
             joypad(joypad) {};
 
+        void tick(int cycles);
         uint8_t read(uint16_t loc);
         void write(uint16_t loc, uint8_t byte);
-        void tick(int cycles);
 
         void loadROM(std::ifstream& file, uintmax_t size);
-
         void update_div(uint8_t div);
+
+        bool is_dma_transfer();
 
     private:
         uint8_t memory[0xFFFF];
@@ -30,6 +31,9 @@ class Bus {
         APU& apu;
         PPU& ppu;
         Joypad& joypad;
+
+        bool dma_transfer = false;
+        void write_dma_transfer(uint8_t data);
 
         static constexpr uint16_t ROM_FIXED_START = 0x0000; // Bank 00
 
@@ -54,6 +58,9 @@ class Bus {
         // Interrupt addresses
         static constexpr uint16_t IF_REG    = 0xFF0F;
         static constexpr uint16_t IF_ENABLE = 0xFFFF;
+
+        // DMA transfer
+        static constexpr uint16_t DMA = 0xFF46;
 
         // Joypad address
         static constexpr uint16_t JOYP = 0xFF00;

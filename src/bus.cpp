@@ -19,7 +19,7 @@ uint8_t Bus::read(uint16_t loc) {
         return ppu.read_oam(loc);
     }
 
-    if (loc >= PPU_START && loc <= PPU_END) {
+    if (loc >= PPU_START && loc <= PPU_END && loc != DMA) {
         return ppu.read_register(loc);
     }
 
@@ -69,7 +69,7 @@ void Bus::write(uint16_t loc, uint8_t byte) {
         return;
     }
 
-    if (loc >= PPU_START && loc <= PPU_END) {
+    if (loc >= PPU_START && loc <= PPU_END && loc != DMA) {
         ppu.write_register(loc, byte);
         return;
     }
@@ -102,6 +102,10 @@ void Bus::write(uint16_t loc, uint8_t byte) {
             joypad.write_joypad(byte);
             break;
 
+        case DMA:
+            write_dma_transfer(byte);
+            break;
+
         case TERMINAL:
             std::cout << (char)byte << std::flush;
             Bus::memory[loc] = byte;
@@ -122,4 +126,13 @@ void Bus::tick(int cycles) {
     timer.tick(cycles);
     apu.tick(cycles);
     ppu.tick(cycles);
+}
+
+bool Bus::is_dma_transfer() {
+    return dma_transfer;
+}
+
+void Bus::write_dma_transfer(uint8_t data) {
+    std::cout << "starting transfer" << std::endl;
+    dma_transfer = true;
 }
