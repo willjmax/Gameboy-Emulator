@@ -4,8 +4,8 @@
 #include "cpu.h"
 
 void CPU::step() {
-    current_opcode = fetch();
-    Instruction instr(current_opcode);
+    uint16_t opcode = fetch();
+    Instruction instr(opcode);
     execute(instr);
 }
 
@@ -20,10 +20,10 @@ void CPU::handle_interrupt() {
 }
 
 uint8_t CPU::fetch() {
-    uint8_t opcode = bus.read(pc);
+    current_opcode = bus.read(pc);
     inc_pc();
 
-    return opcode;
+    return current_opcode;
 }
 
 uint16_t CPU::fetch_two_bytes() {
@@ -298,10 +298,16 @@ void CPU::jmp_pc(uint16_t offset) {
 }
 
 void CPU::check_pc_oob() {
-    if (pc > INSTR_RANGE_END) {
-        std::cerr << std::format("PC out of bounds: 0x{:04X}. "
-                                 "Caused by opcode 0x{:02X}\n", 
-                                 pc, current_opcode) << std::endl;
-        std::abort();
+    if (pc <= INSTR_RANGE_END) {
+        return;
     }
+
+    if (pc >= HRAM_START && pc <= HRAM_END) {
+        return;
+    }
+
+    std::cerr << std::format("PC out of bounds: 0x{:04X}. "
+                             "Caused by opcode 0x{:02X}\n", 
+                             pc, current_opcode) << std::endl;
+    std::abort();
 }

@@ -35,6 +35,8 @@ class CPU {
         REG_PAIR(h, l, hl);
 
         static constexpr uint16_t INSTR_RANGE_END = 0xFDFF;
+        static constexpr uint16_t HRAM_START = 0xFF80;
+        static constexpr uint16_t HRAM_END   = 0xFFFE;
 
         uint16_t pc;
         uint16_t sp;

@@ -199,6 +199,7 @@ void CPU::execute_block_00(Instruction instr) {
         case 0b0011: {
             uint8_t r16 = instr.range(5, 4);
             uint16_t data = read_r16(r16);
+
             write_r16(r16, data + 1);
             bus.tick(4);
             return;

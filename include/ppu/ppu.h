@@ -36,11 +36,17 @@ class PPU {
         static constexpr uint16_t REG_END   = 0xFF4B;
         static constexpr uint16_t REG_SIZE  = REG_END - REG_START + 1;
 
-        static constexpr uint16_t MAP_AREA_0_START = 0x9800 - VRAM_START;
-        static constexpr uint16_t MAP_AREA_1_START = 0x9C00 - VRAM_START;
+        //static constexpr uint16_t MAP_AREA_0_START = 0x9800 - VRAM_START;
+        //static constexpr uint16_t MAP_AREA_1_START = 0x9C00 - VRAM_START;
 
-        static constexpr uint16_t DATA_AREA_0_START = 0x9000 - VRAM_START;
-        static constexpr uint16_t DATA_AREA_1_START = 0x8000 - VRAM_START;
+        //static constexpr uint16_t DATA_AREA_0_START = 0x9000 - VRAM_START;
+        //static constexpr uint16_t DATA_AREA_1_START = 0x8000 - VRAM_START;
+
+        static constexpr uint16_t MAP_AREA_0_START = 0x9800;
+        static constexpr uint16_t MAP_AREA_1_START = 0x9C00;
+
+        static constexpr uint16_t DATA_AREA_0_START = 0x9000;
+        static constexpr uint16_t DATA_AREA_1_START = 0x8000;
 
         static constexpr uint8_t WIDTH  = 160;
         static constexpr uint8_t HEIGHT = 144;

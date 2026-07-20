@@ -177,6 +177,7 @@ void PixelFetcher::get_sprite_tile() {
     }
 
     tile_id = (raw_index << 4) | (sprite_line << 1);
+    tile_id += PPU::VRAM_START;
     obj_state = OBJ_State::GET_SPRITE_LOW;
 }
 

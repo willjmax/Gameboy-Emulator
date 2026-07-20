@@ -1,4 +1,5 @@
 #include <ppu/ppu.h>
+#include <iostream>
 
 uint8_t PPU::read_reg_default(uint16_t loc) {
     return registers[loc];
@@ -9,14 +10,29 @@ void PPU::write_reg_default(uint16_t loc, uint8_t data) {
 }
 
 uint8_t PPU::read_vram(uint16_t loc) {
-    return vram[loc];
+
+    if (loc < VRAM_START || loc > VRAM_END) {
+        throw std::runtime_error(std::format("VRAM read out of bounds: {:04X}", loc));
+    }
+
+    return vram[loc - VRAM_START];
 }
 
 uint8_t PPU::read_oam(uint16_t loc) {
+
+    if (loc < OAM_START || loc > OAM_END) {
+        throw std::runtime_error(std::format("OAM read out of bounds: {:04X}", loc));
+    }
+
     return oam[loc - OAM_START];
 }
 
 uint8_t PPU::read_register(uint16_t loc) {
+
+    if (loc < REG_START || loc > REG_END) {
+        throw std::runtime_error(std::format("PPU register read out of bounds: {:04X}", loc));
+    }
+
     uint16_t shifted_loc = loc - REG_START;
     ReadHandler handler = read_reg_handlers[shifted_loc];
     return (this->*handler)(shifted_loc);
@@ -29,14 +45,29 @@ uint8_t PPU::read_register(PPU_REG reg) {
 }
 
 void PPU::write_vram(uint16_t loc, uint8_t data) {
+
+    if (loc < VRAM_START || loc > VRAM_END) {
+        throw std::runtime_error(std::format("VRAM write out of bounds: {:04X}", loc));
+    }
+
     vram[loc - VRAM_START] = data;
 }
 
 void PPU::write_oam(uint16_t loc, uint8_t data) {
+
+    if (loc < OAM_START || loc > OAM_END) {
+        throw std::runtime_error(std::format("OAM write out of bounds: {:04X}", loc));
+    }
+
     oam[loc - OAM_START] = data;
 }
 
 void PPU::write_register(uint16_t loc, uint8_t data) {
+
+    if (loc < REG_START || loc > REG_END) {
+        throw std::runtime_error(std::format("PPU register write out of bounds: {:04X}", loc));
+    }
+
     uint16_t shifted_loc = loc - REG_START;
     WriteHandler handler = write_reg_handlers[shifted_loc];
     (this->*handler)(shifted_loc, data);
