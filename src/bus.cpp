@@ -1,7 +1,6 @@
 #include <cstdint>
 #include <iostream>
 #include "bus.h"
-#include <iostream>
 
 uint8_t Bus::read(uint16_t loc) {
 
