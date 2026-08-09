@@ -36,12 +36,6 @@ class PPU {
         static constexpr uint16_t REG_END   = 0xFF4B;
         static constexpr uint16_t REG_SIZE  = REG_END - REG_START + 1;
 
-        //static constexpr uint16_t MAP_AREA_0_START = 0x9800 - VRAM_START;
-        //static constexpr uint16_t MAP_AREA_1_START = 0x9C00 - VRAM_START;
-
-        //static constexpr uint16_t DATA_AREA_0_START = 0x9000 - VRAM_START;
-        //static constexpr uint16_t DATA_AREA_1_START = 0x8000 - VRAM_START;
-
         static constexpr uint16_t MAP_AREA_0_START = 0x9800;
         static constexpr uint16_t MAP_AREA_1_START = 0x9C00;
 
@@ -68,6 +62,12 @@ class PPU {
         // interal read/write
         uint8_t read_register(PPU_REG reg);
         void write_register(PPU_REG reg, uint8_t data);
+        uint8_t read_vram(uint16_t loc);
+        uint8_t read_oam(uint16_t loc);
+        uint8_t read_register(uint16_t loc);
+        void write_vram(uint16_t loc, uint8_t data);
+        void write_oam(uint16_t loc, uint8_t data);
+        void write_register(uint16_t loc, uint8_t data);
         
         std::array<ReadHandler, REG_SIZE> read_reg_handlers;
         std::array<WriteHandler, REG_SIZE> write_reg_handlers;
@@ -113,13 +113,9 @@ class PPU {
     public:
         PPU(Interrupt& i);
 
-        uint8_t read_vram(uint16_t loc);
-        uint8_t read_oam(uint16_t loc);
-        uint8_t read_register(uint16_t loc);
+        uint8_t read(uint16_t loc);
+        void write(uint16_t loc, uint8_t data);
 
-        void write_vram(uint16_t loc, uint8_t data);
-        void write_oam(uint16_t loc, uint8_t data);
-        void write_register(uint16_t loc, uint8_t data);
 
         void tick(uint8_t cycles);
 

@@ -1,5 +1,24 @@
 #include <ppu/ppu.h>
-#include <iostream>
+
+uint8_t PPU::read(uint16_t loc) {
+    if (loc >= VRAM_START && loc <= VRAM_END) {
+        return read_vram(loc);
+    } else if (loc >= OAM_START && loc <= OAM_END) {
+        return read_oam(loc);
+    } else {
+        return read_register(loc);
+    }
+}
+
+void PPU::write(uint16_t loc, uint8_t data) {
+    if (loc >= VRAM_START && loc <= VRAM_END) {
+        write_vram(loc, data);
+    } else if (loc >= OAM_START && loc <= OAM_END) {
+        write_oam(loc, data);
+    } else {
+        write_register(loc, data);
+    }
+}
 
 uint8_t PPU::read_reg_default(uint16_t loc) {
     return registers[loc];

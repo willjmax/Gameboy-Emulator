@@ -42,6 +42,7 @@ class Bus {
         static constexpr uint16_t APU_END         = 0xFF3F;
 
         // PPU
+        bool is_ppu_addr(uint16_t loc);
         static constexpr uint16_t VRAM_START = 0x8000;
         static constexpr uint16_t VRAM_END   = 0x9FFF;
         static constexpr uint16_t OAM_START  = 0xFE00;

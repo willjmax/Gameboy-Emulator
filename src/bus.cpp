@@ -10,16 +10,8 @@ uint8_t Bus::read(uint16_t loc) {
         return apu.read(loc);
     }
 
-    if (loc >= VRAM_START && loc <= VRAM_END) {
-        return ppu.read_vram(loc);
-    }
-
-    if (loc >= OAM_START && loc <= OAM_END) {
-        return ppu.read_oam(loc);
-    }
-
-    if (loc >= PPU_START && loc <= PPU_END && loc != DMA) {
-        return ppu.read_register(loc);
+    if (is_ppu_addr(loc)) {
+        return ppu.read(loc);
     }
 
     switch (loc) {
@@ -58,19 +50,8 @@ void Bus::write(uint16_t loc, uint8_t byte) {
         return;
     }
 
-    if (loc >= VRAM_START && loc <= VRAM_END) {
-        ppu.write_vram(loc, byte);
-        return;
-    }
-
-    if (loc >= OAM_START && loc <= OAM_END) {
-        ppu.write_oam(loc, byte);
-        return;
-    }
-
-    if (loc >= PPU_START && loc <= PPU_END && loc != DMA) {
-        ppu.write_register(loc, byte);
-        return;
+    if (is_ppu_addr(loc)) {
+        ppu.write(loc, byte);
     }
 
     switch (loc) {
@@ -134,4 +115,20 @@ bool Bus::is_dma_transfer() {
 void Bus::write_dma_transfer(uint8_t data) {
     std::cout << "starting transfer" << std::endl;
     dma_transfer = true;
+}
+
+bool Bus::is_ppu_addr(uint16_t loc) {
+    if (loc >= VRAM_START && loc <= VRAM_END) {
+        return true;
+    }
+
+    if (loc >= OAM_START && loc <= OAM_END) {
+        return true;
+    }
+
+    if (loc >= PPU_START && loc <= PPU_END && loc != DMA) {
+        return true;
+    }
+
+    return false;
 }
